@@ -454,7 +454,7 @@ def main():
         silence_all()
         return
     if cmd == "test":
-        speak("Hola Daniel. Soy Claude, y a partir de ahora puedes escucharme.", cfg)
+        speak("Hola. Soy Claude, y a partir de ahora puedes escucharme.", cfg)
         return
     if cmd == "modo":
         val = sys.argv[2] if len(sys.argv) > 2 else ""
