@@ -1,0 +1,12 @@
+#!/bin/bash
+# voz — control de claude-voice desde cualquier terminal
+# uso: voz test | off | on | callate | modo <full|brief|summary|off> | velocidad <n> | usar <NombreDeVoz> | estado
+# Resuelve su propia ubicación (aunque se invoque vía symlink) para encontrar claude_voice.py
+SOURCE="${BASH_SOURCE[0]:-$0}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+exec /usr/bin/python3 "$DIR/claude_voice.py" "$@"

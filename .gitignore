@@ -1,0 +1,6 @@
+# configuración personal del usuario (se crea desde config.example.json)
+config.json
+
+__pycache__/
+*.pyc
+.DS_Store

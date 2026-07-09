@@ -1,0 +1,8 @@
+{
+  "mode": "full",
+  "voice": "auto",
+  "rate": 185,
+  "max_chars": 2500,
+  "speak_notifications": true,
+  "announce_project": true
+}
