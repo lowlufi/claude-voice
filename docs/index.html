@@ -67,10 +67,20 @@
   .copy:hover { background: rgba(255,255,255,.18); }
   .req { color: var(--muted); font-size: .95rem; margin-top: 12px; }
 
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 13px 8px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 1.04rem; }
-  td:first-child { white-space: nowrap; width: 1%; padding-right: 20px; }
-  tr:last-child td { border-bottom: 0; }
+  details { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; }
+  summary { cursor: pointer; list-style: none; padding: 15px 18px; font-weight: 600; font-size: 1.05rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "+"; color: var(--accent); font-weight: 800; margin-right: 12px; }
+  details[open] summary::before { content: "–"; }
+  summary:hover { color: var(--accent); }
+  details .a { padding: 0 18px 16px 40px; color: var(--muted); font-size: 1rem; }
+  details .a p { margin-bottom: 8px; }
+  details pre {
+    background: var(--dark); color: var(--dark-text); border-radius: 10px;
+    padding: 10px 16px; font-family: var(--mono); font-size: .95rem;
+    margin: 10px 0; overflow-x: auto; line-height: 1.9;
+  }
+  details pre i { font-style: normal; color: #a89f8c; }
   code.k {
     font-family: var(--mono); font-size: .9em; background: var(--accent-soft); color: var(--accent);
     padding: 3px 9px; border-radius: 7px; white-space: nowrap; font-weight: 600;
@@ -113,16 +123,115 @@ voz test</code></pre>
 
   <section aria-labelledby="t-control">
     <div class="wrap">
-      <h2 id="t-control">Todo el control, en una palabra</h2>
-      <table>
-        <tr><td><code class="k">voz callate</code></td><td>Se calla ya. También se calla sola al enviar un prompt o cuando vuelves a la terminal.</td></tr>
-        <tr><td><code class="k">voz off / on</code></td><td>Apagar y encender, sin desinstalar.</td></tr>
-        <tr><td><code class="k">voz motor neural</code></td><td>Voz moderna casi humana, gratis (con internet). <code class="k">voz motor tradicional</code> vuelve a la de macOS, 100% offline.</td></tr>
-        <tr><td><code class="k">voz demo</code></td><td>Escucha las ~45 voces en español seguidas — cada una se presenta — y elige la tuya.</td></tr>
-        <tr><td><code class="k">voz favoritas dalia victor</code></td><td>Guarda tus favoritas; después basta <code class="k">voz usar dalia</code>.</td></tr>
-        <tr><td><code class="k">voz modo brief</code></td><td>Leer solo lo esencial de cada respuesta.</td></tr>
-        <tr><td><code class="k">voz velocidad 200</code></td><td>Más rápido o más lento.</td></tr>
-      </table>
+      <h2 id="t-control">Tutorial: un comando a la vez</h2>
+      <p style="color:var(--muted); margin-bottom:20px">Todo se controla con la palabra <code class="k">voz</code> desde cualquier terminal. Toca un comando para ver cómo se usa.</p>
+
+      <details>
+        <summary><code class="k">voz test</code> — escuchar una prueba</summary>
+        <div class="a">
+          <p>Dice una frase con tu configuración actual, para comprobar que todo suena bien.</p>
+          <pre>$ voz test
+<i>🔊 «Hola. Soy Claude, y a partir de ahora puedes escucharme.»</i></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz callate</code> — que se calle ya</summary>
+        <div class="a">
+          <p>Corta lo que esté diciendo en ese instante. No apaga nada: la siguiente respuesta vuelve a sonar.</p>
+          <pre>$ voz callate</pre>
+          <p>También se calla sola al enviar un prompt y cuando vuelves a la terminal o al IDE.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz off</code> / <code class="k">voz on</code> — apagar y encender</summary>
+        <div class="a">
+          <p>Silencio total sin desinstalar: los hooks quedan instalados pero mudos, hasta que la enciendas de nuevo.</p>
+          <pre>$ voz off
+<i>Voz desactivada. Reactívala con: voz on</i>
+$ voz on
+<i>Voz activada.</i></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz motor</code> — elegir voz moderna o tradicional</summary>
+        <div class="a">
+          <p>Dos motores: <b>neural</b> (casi humana, gratis, necesita internet) y <b>tradicional</b> (la de macOS, 100% offline).</p>
+          <pre>$ voz motor neural       <i># instala lo necesario la primera vez</i>
+$ voz motor tradicional  <i># volver a la voz de macOS</i></pre>
+          <p>Si estás sin internet, la neural cae sola a la tradicional — nunca te quedas sin voz.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz voces</code> — ver las voces disponibles</summary>
+        <div class="a">
+          <p>Lista las ~45 voces neuronales en español: México, Chile, España, Argentina y más.</p>
+          <pre>$ voz voces
+<i>es-MX-DaliaNeural
+es-CL-CatalinaNeural
+es-PR-VictorNeural …</i></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz demo</code> — escucharlas todas y elegir</summary>
+        <div class="a">
+          <p>Reproduce las voces una tras otra; cada una se presenta con su nombre y país. Ctrl+C para parar.</p>
+          <pre>$ voz demo        <i># todas (~3 minutos)</i>
+$ voz demo es-MX  <i># solo las de un país</i></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz usar</code> — cambiar de voz</summary>
+        <div class="a">
+          <p>Acepta voces neuronales, voces de macOS, o el nombre corto de una favorita.</p>
+          <pre>$ voz usar es-CL-CatalinaNeural  <i># neural, nombre completo</i>
+$ voz usar dalia                 <i># favorita, nombre corto</i>
+$ voz usar Mónica                <i># voz de macOS (say -v '?')</i></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz favoritas</code> — guardar tus preferidas</summary>
+        <div class="a">
+          <p>Guarda las que te gustaron de la demo; después basta el nombre corto para cambiar.</p>
+          <pre>$ voz favoritas dalia victor
+<i>★ es-MX-DaliaNeural
+★ es-PR-VictorNeural</i>
+$ voz usar victor</pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz modo</code> — cuánto quieres escuchar</summary>
+        <div class="a">
+          <p><b>full</b> lee toda la respuesta (limpia, sin código ni tablas) · <b>brief</b> solo lo esencial y las preguntas · <b>summary</b> un resumen hecho con IA (único que gasta tokens) · <b>off</b> nada.</p>
+          <pre>$ voz modo brief</pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz velocidad</code> — más rápido o más lento</summary>
+        <div class="a">
+          <p>En palabras por minuto. 185 es el punto de partida; 200–220 cuando te acostumbres.</p>
+          <pre>$ voz velocidad 200</pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code class="k">voz estado</code> — ver cómo está todo</summary>
+        <div class="a">
+          <p>Muestra el motor, la voz, la velocidad, el modo y si está silenciada.</p>
+          <pre>$ voz estado
+<i>motor:  edge (neural, con respaldo say)
+voz neural: es-PR-VictorNeural …</i></pre>
+        </div>
+      </details>
+
       <p class="strip" style="padding-top:22px">Lee las respuestas limpias (sin código ni tablas) · Avisa cuando Claude necesita permiso · Nunca habla encima de otra voz</p>
     </div>
   </section>
