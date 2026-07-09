@@ -19,6 +19,8 @@
     --ink: #454138;     /* tinta gris-café */
     --dim: #8a8674;
     --line: #a9a591;
+    --neon: #ff3d00;    /* naranja fluor: marcas sobre beige */
+    --acid: #9dff00;    /* verde ácido: marcas sobre tinta oscura */
     --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,13 +30,18 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     line-height: 1.7; -webkit-font-smoothing: antialiased;
   }
+  /* línea HUD fluorescente en el borde superior */
+  body::before {
+    content: ""; position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100;
+    background: var(--neon); box-shadow: 0 0 10px rgba(255,61,0,.7);
+  }
   /* scanlines sutiles, marca de la casa */
   body::after {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99;
     background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(69,65,56,.03) 2px 3px);
   }
   .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
-  ::selection { background: var(--ink); color: var(--bg); }
+  ::selection { background: var(--neon); color: #fff; }
 
   /* ---------- barra superior ---------- */
   .topbar { border-bottom: 1px solid var(--line); }
@@ -53,15 +60,16 @@
   .sec { padding: 64px 0 8px; }
   .sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
   .sec-head .tag {
-    font-family: var(--mono); font-size: .72rem; color: var(--bg);
+    font-family: var(--mono); font-size: .72rem; color: var(--acid);
     background: var(--ink); padding: 3px 9px; letter-spacing: .1em;
+    text-shadow: 0 0 7px rgba(157,255,0,.55);
   }
   .sec-head h2 { font-size: .95rem; font-weight: 700; letter-spacing: .32em; text-transform: uppercase; }
   .sec-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
   /* ---------- hero ---------- */
   header { padding: 96px 0 72px; text-align: center; }
-  .diamond { color: var(--dim); font-size: .8rem; letter-spacing: .5em; margin-bottom: 26px; }
+  .diamond { color: var(--neon); font-size: .8rem; letter-spacing: .5em; margin-bottom: 26px; text-shadow: 0 0 9px rgba(255,61,0,.6); }
   h1 {
     font-size: clamp(1.7rem, 5.5vw, 3rem); font-weight: 700;
     letter-spacing: .3em; text-transform: uppercase; text-indent: .3em;
@@ -71,10 +79,10 @@
     text-transform: uppercase;
   }
   .h1-rule { width: 220px; margin: 26px auto; border: 0; border-top: 1px solid var(--line); position: relative; }
-  .h1-rule::after { content: "◆"; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); color: var(--ink); font-size: .7rem; background: var(--bg); padding: 0 10px; }
+  .h1-rule::after { content: "◆"; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); color: var(--neon); font-size: .7rem; background: var(--bg); padding: 0 10px; text-shadow: 0 0 8px rgba(255,61,0,.6); }
   .lede { max-width: 540px; margin: 0 auto; color: var(--ink); font-size: .98rem; }
   .eq { display: inline-flex; gap: 4px; align-items: flex-end; height: 16px; margin: 34px auto 0; }
-  .eq i { width: 5px; background: var(--ink); animation: eq 1.2s ease-in-out infinite; }
+  .eq i { width: 5px; background: var(--neon); box-shadow: 0 0 6px rgba(255,61,0,.5); animation: eq 1.2s ease-in-out infinite; }
   .eq i:nth-child(1){height:35%} .eq i:nth-child(2){height:90%;animation-delay:.12s} .eq i:nth-child(3){height:55%;animation-delay:.24s} .eq i:nth-child(4){height:100%;animation-delay:.36s} .eq i:nth-child(5){height:45%;animation-delay:.48s} .eq i:nth-child(6){height:75%;animation-delay:.6s} .eq i:nth-child(7){height:30%;animation-delay:.72s}
   @keyframes eq { 0%,100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
   @media (prefers-reduced-motion: reduce) { .eq i { animation: none } }
@@ -89,8 +97,9 @@
     padding: 13px 18px; margin-bottom: 8px; text-align: left;
     transition: background .12s, color .12s, border-color .12s;
   }
-  .mi::before { content: "▪"; font-size: .7rem; }
-  .mi:hover, .mi:focus-visible { background: var(--ink); color: var(--bg); border-left-color: var(--ink); outline: none; }
+  .mi::before { content: "▪"; font-size: .7rem; color: var(--neon); text-shadow: 0 0 6px rgba(255,61,0,.55); }
+  .mi:hover, .mi:focus-visible { background: var(--ink); color: var(--bg); border-left-color: var(--acid); outline: none; }
+  .mi:hover::before, .mi:focus-visible::before { color: var(--acid); text-shadow: 0 0 7px rgba(157,255,0,.7); }
   .mi small { margin-left: auto; letter-spacing: .1em; color: inherit; opacity: .55; font-size: .68rem; }
 
   /* ---------- paneles / consola ---------- */
@@ -104,7 +113,7 @@
     font-size: .84rem; line-height: 1.9; padding: 16px 18px; margin: 14px 0;
     overflow-x: auto; white-space: pre;
   }
-  .con b { color: #d1cdb7; font-weight: 400; }
+  .con b { color: var(--acid); font-weight: 400; text-shadow: 0 0 6px rgba(157,255,0,.45); }
   .con i { font-style: normal; color: #8a8674; }
   code.k {
     font-family: var(--mono); font-size: .85em; background: var(--ink); color: var(--bg);
@@ -114,7 +123,7 @@
   .kv td { padding: 9px 10px; border-bottom: 1px dotted var(--line); vertical-align: top; }
   .kv td:first-child { white-space: nowrap; width: 1%; padding-right: 22px; }
   .kv tr:last-child td { border-bottom: 0; }
-  .note { border-left: 3px solid var(--ink); padding: 10px 16px; font-size: .9rem; color: var(--ink); background: rgba(69,65,56,.05); margin-top: 14px; }
+  .note { border-left: 3px solid var(--neon); padding: 10px 16px; font-size: .9rem; color: var(--ink); background: rgba(69,65,56,.05); margin-top: 14px; }
 
   /* ---------- demo ---------- */
   .dialog {
@@ -133,8 +142,9 @@
     transition: background .12s, color .12s;
   }
   summary::-webkit-details-marker { display: none; }
-  summary::before { content: "◇"; font-size: .75rem; flex: none; }
-  details[open] summary::before { content: "◆"; }
+  summary::before { content: "◇"; font-size: .75rem; flex: none; color: var(--neon); }
+  details[open] summary::before { content: "◆"; text-shadow: 0 0 7px rgba(255,61,0,.6); }
+  summary:hover::before { color: var(--acid); text-shadow: 0 0 7px rgba(157,255,0,.7); }
   summary:hover { background: var(--ink); color: var(--bg); }
   details .a { padding: 4px 6px 20px 30px; color: var(--ink); font-size: .93rem; }
 
