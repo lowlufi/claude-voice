@@ -41,13 +41,16 @@
   h1 { font-size: clamp(2.1rem, 6vw, 3rem); line-height: 1.15; letter-spacing: -.02em; }
   h1 em { font-style: normal; color: var(--accent); }
   .lede { max-width: 540px; margin: 18px auto 0; font-size: 1.25rem; color: var(--muted); }
+  .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
   .btn {
-    display: inline-flex; align-items: center; gap: 10px; margin-top: 28px;
+    display: inline-flex; align-items: center; gap: 10px;
     padding: 16px 30px; border-radius: 14px; font-size: 1.12rem; font-weight: 700;
-    font-family: inherit; cursor: pointer; border: 0;
+    font-family: inherit; cursor: pointer; border: 2px solid transparent;
     background: var(--accent-bright); color: #fff;
   }
   .btn:hover { background: var(--accent); }
+  .btn-alt { background: var(--card); color: var(--accent); border-color: var(--accent-bright); }
+  .btn-alt:hover { background: var(--accent-soft); }
   #demo-note { color: var(--muted); font-size: .92rem; margin-top: 12px; min-height: 1.4em; }
   .free { margin-top: 18px; color: var(--muted); font-size: .98rem; }
 
@@ -100,8 +103,11 @@
     <span class="logo" aria-hidden="true">🔊</span>
     <h1>Claude Code te habla<br><em>en voz alta</em></h1>
     <p class="lede">Cuando Claude termina de trabajar, te lo dice con una voz casi humana: qué hizo, qué encontró y qué sigue. Tú mientras tanto, a lo tuyo.</p>
-    <button class="btn" id="demo-btn" type="button">▶ Escuchar cómo suena</button>
-    <p id="demo-note" aria-live="polite"></p>
+    <div class="btns">
+      <button class="btn" data-audio="audio/victor.mp3" data-who="Víctor (Puerto Rico)" type="button">▶ Escuchar a Víctor</button>
+      <button class="btn btn-alt" data-audio="audio/dalia.mp3" data-who="Dalia (México)" type="button">▶ Escuchar a Dalia</button>
+    </div>
+    <p id="demo-note" aria-live="polite">Muestras reales del motor de voz neural.</p>
     <p class="free">Gratis · Cero tokens · Open source (MIT) · Aliada de la accesibilidad</p>
   </div>
 </header>
@@ -263,65 +269,24 @@ voz neural: es-PR-VictorNeural …</i></pre>
     });
   });
 
-  /* demo con la voz del navegador */
-  var samples = [
-    "Hola. Soy Claude, y a partir de ahora puedes escucharme.",
-    "Terminé la auditoría: tres hallazgos, uno crítico. ¿Quieres que lo corrija ahora?",
-    "Claude necesita tu permiso para usar Bash.",
-    "Migración completada. Los cuarenta y dos tests pasan. El siguiente paso es desplegar a staging."
-  ];
-  var si = 0;
+  /* demo con muestras reales del motor neural (mp3 pregrabados) */
   var note = document.getElementById("demo-note");
-  var btn = document.getElementById("demo-btn");
+  var player = null;
 
-  function pickVoice() {
-    var vs = speechSynthesis.getVoices();
-    var pref = ["Paulina", "Mónica", "Monica"];
-    for (var i = 0; i < pref.length; i++) {
-      var f = vs.filter(function (v) { return v.name.indexOf(pref[i]) === 0; });
-      if (f.length) return f[0];
-    }
-    var es = vs.filter(function (v) { return (v.lang || "").indexOf("es") === 0; });
-    return es[0] || null;
-  }
-
-  function speak(text) {
-    if (!window.speechSynthesis) {
-      note.textContent = "Tu navegador no soporta síntesis de voz — tu Mac sí: instala y corre «voz test».";
-      return;
-    }
-    try { speechSynthesis.cancel(); speechSynthesis.resume(); } catch (e) {}
-    setTimeout(function () {
-      var u = new SpeechSynthesisUtterance(text);
-      var v = pickVoice();
-      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "es-MX"; }
-      var started = false;
-      u.onstart = function () { started = true; note.textContent = "«" + text + "»  (voz del navegador; en tu Mac suena mejor)"; };
-      u.onerror = function () { note.textContent = "El navegador bloqueó el audio — prueba en Chrome o Safari, o instala y corre «voz test»."; };
-      speechSynthesis.speak(u);
-      setTimeout(function () {
-        if (!started && !speechSynthesis.speaking) {
-          note.textContent = "El navegador bloqueó el audio — prueba en Chrome o Safari, o instala y corre «voz test».";
-        }
-      }, 1500);
-    }, 80);
-  }
-
-  btn && btn.addEventListener("click", function () {
-    var text = samples[si % samples.length];
-    if (window.speechSynthesis && speechSynthesis.getVoices().length === 0) {
-      var done = false;
-      var t = setTimeout(function () { if (!done) { done = true; speak(text); } }, 1000);
-      speechSynthesis.addEventListener("voiceschanged", function h() {
-        speechSynthesis.removeEventListener("voiceschanged", h);
-        if (!done) { done = true; clearTimeout(t); speak(text); }
+  document.querySelectorAll("[data-audio]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (player) { player.pause(); player = null; }
+      player = new Audio(btn.getAttribute("data-audio"));
+      player.play().then(function () {
+        note.textContent = "Sonando: " + btn.getAttribute("data-who") + " — voz neural real de claude-voice.";
+      }).catch(function () {
+        note.textContent = "El navegador bloqueó el audio; vuelve a tocar el botón o instala y corre «voz test».";
       });
-    } else {
-      speak(text);
-    }
-    si++;
+      player.addEventListener("ended", function () {
+        note.textContent = "Muestras reales del motor de voz neural.";
+      });
+    });
   });
-  if (window.speechSynthesis) speechSynthesis.getVoices();
 })();
 </script>
 </body>
