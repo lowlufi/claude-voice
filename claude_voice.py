@@ -11,6 +11,8 @@ Comandos manuales (o vía el wrapper `voz`):
   voz off | on              silenciar del todo / reactivar
   voz callate               cortar lo que esté diciendo ahora
   voz motor <say|edge>      say = voz de macOS (offline) | edge = neural (gratis, internet)
+  voz voces                 listar las voces neuronales en español
+  voz demo [filtro]         escuchar todas las voces seguidas (ej: voz demo es-CL)
   voz modo <full|brief|summary|off>
   voz velocidad <n>         palabras por minuto
   voz usar <NombreDeVoz>    voz de `say`, o neural (ej. es-MX-DaliaNeural)
@@ -254,7 +256,7 @@ def edge_rate_pct(rate):
     return max(-40, min(60, pct))
 
 
-def edge_synthesize(text, cfg):
+def edge_synthesize(text, cfg, out_path=EDGE_MEDIA):
     """Genera el audio neural con edge-tts. Devuelve la ruta del mp3 o None si
     falla (sin internet, no instalado, etc.) para que el llamador caiga a `say`."""
     pct = edge_rate_pct(cfg.get("rate", 185))
@@ -263,15 +265,39 @@ def edge_synthesize(text, cfg):
         "--text", text,
         "--voice", cfg.get("edge_voice") or DEFAULTS["edge_voice"],
         "--rate", "{:+d}%".format(pct),
-        "--write-media", EDGE_MEDIA,
+        "--write-media", out_path,
     ]
     try:
         r = subprocess.run(args, capture_output=True, timeout=25)
-        if r.returncode == 0 and os.path.exists(EDGE_MEDIA) and os.path.getsize(EDGE_MEDIA) > 0:
-            return EDGE_MEDIA
+        if r.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+            return out_path
     except (OSError, subprocess.SubprocessError):
         pass
     return None
+
+
+def list_edge_voices():
+    """Nombres de las voces neuronales en español, o [] si no hay conexión."""
+    if not edge_available():
+        return []
+    try:
+        r = subprocess.run(
+            [sys.executable, "-m", "edge_tts", "--list-voices"],
+            capture_output=True, text=True, timeout=30,
+        )
+        return [l.split()[0] for l in r.stdout.splitlines() if l.startswith("es-")]
+    except (OSError, subprocess.SubprocessError):
+        return []
+
+
+EDGE_COUNTRIES = {
+    "AR": "Argentina", "BO": "Bolivia", "CL": "Chile", "CO": "Colombia",
+    "CR": "Costa Rica", "CU": "Cuba", "DO": "República Dominicana",
+    "EC": "Ecuador", "ES": "España", "GQ": "Guinea Ecuatorial",
+    "GT": "Guatemala", "HN": "Honduras", "MX": "México", "NI": "Nicaragua",
+    "PA": "Panamá", "PE": "Perú", "PR": "Puerto Rico", "PY": "Paraguay",
+    "SV": "El Salvador", "US": "Estados Unidos", "UY": "Uruguay", "VE": "Venezuela",
+}
 
 
 def speak(text, cfg, when_busy="interrupt"):
@@ -587,19 +613,11 @@ def main():
         return
     if cmd == "voces":
         print("VOCES NEURONALES en español — actívalas con: voz usar <nombre>")
+        print("(escúchalas todas seguidas con: voz demo, o por país: voz demo es-CL)")
         listed = False
-        if edge_available():
-            try:
-                r = subprocess.run(
-                    [sys.executable, "-m", "edge_tts", "--list-voices"],
-                    capture_output=True, text=True, timeout=30,
-                )
-                for line in r.stdout.splitlines():
-                    if line.startswith("es-"):
-                        print("  " + line.split()[0])
-                        listed = True
-            except (OSError, subprocess.SubprocessError):
-                pass
+        for v in list_edge_voices():
+            print("  " + v)
+            listed = True
         if not listed:
             print("  (sin conexión o sin edge-tts; las más usadas:)")
             for v in ("es-MX-DaliaNeural", "es-MX-JorgeNeural", "es-CL-CatalinaNeural",
@@ -608,6 +626,38 @@ def main():
                 print("  " + v)
         print()
         print("VOCES DE macOS (motor tradicional) — lista completa: say -v '?'")
+        return
+    if cmd == "demo":
+        filtro = (sys.argv[2] if len(sys.argv) > 2 else "").lower()
+        voices = list_edge_voices()
+        if not voices:
+            print("La demo necesita internet y el paquete edge-tts (actívalo con: voz motor neural).")
+            sys.exit(1)
+        if filtro:
+            voices = [v for v in voices if filtro in v.lower()]
+        if not voices:
+            print("Ninguna voz coincide con '{}'. Lista completa: voz voces".format(filtro))
+            sys.exit(1)
+        demo_media = os.path.expanduser("~/.claude/claude-voice-demo.mp3")
+        print("Reproduciendo {} voces — Ctrl+C para detener.".format(len(voices)))
+        try:
+            for v in voices:
+                m = re.match(r"es-([A-Z]{2})-(\w+?)Neural$", v)
+                nombre = m.group(2) if m else v
+                pais = EDGE_COUNTRIES.get(m.group(1), "") if m else ""
+                print("  ▶ {}".format(v))
+                frase = "Hola, soy {}{}. Así sueno yo.".format(
+                    nombre, ", de " + pais if pais else "")
+                cfg_v = dict(cfg)
+                cfg_v["edge_voice"] = v
+                media = edge_synthesize(frase, cfg_v, out_path=demo_media)
+                if not media:
+                    print("    (falló, la salto)")
+                    continue
+                subprocess.run(["/usr/bin/afplay", media])
+        except KeyboardInterrupt:
+            print("\nDemo detenida.")
+        print("¿Ya tienes favorita? Actívala con: voz usar <nombre>")
         return
     if cmd == "estado":
         cmd_estado(cfg)
