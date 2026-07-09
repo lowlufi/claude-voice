@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" font-family="Menlo, Consolas, monospace" font-size="14">
+  <style>
+    .line { opacity: 0; animation: aparecer .4s ease forwards; }
+    .l1 { animation-delay: .4s } .l2 { animation-delay: 1.4s } .l3 { animation-delay: 2.2s }
+    .l4 { animation-delay: 3.2s } .l5 { animation-delay: 4.2s } .l6 { animation-delay: 4.7s }
+    @keyframes aparecer { to { opacity: 1 } }
+    .bar { transform-origin: center bottom; animation: eq 1s ease-in-out infinite; opacity: 0; }
+    .bars { animation: aparecer .3s ease 4.2s forwards; opacity: 0; }
+    .b2 { animation-delay: .15s } .b3 { animation-delay: .3s } .b4 { animation-delay: .45s }
+    @keyframes eq { 0%,100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
+    .cursor { animation: parpadeo 1.1s steps(1) infinite; }
+    @keyframes parpadeo { 50% { opacity: 0 } }
+  </style>
+  <rect width="560" height="300" rx="14" fill="#1a1815"/>
+  <rect width="560" height="36" rx="14" fill="#26221c"/>
+  <rect y="22" width="560" height="14" fill="#26221c"/>
+  <circle cx="22" cy="18" r="6" fill="#ff5f57"/>
+  <circle cx="42" cy="18" r="6" fill="#febc2e"/>
+  <circle cx="62" cy="18" r="6" fill="#28c840"/>
+  <text x="84" y="23" fill="#8a8478" font-size="12">claude — mi-proyecto</text>
+
+  <text x="24" y="70" class="line l1"><tspan fill="#7cd992">&gt;</tspan> <tspan fill="#f0eae0">audita la seguridad del módulo de pagos</tspan></text>
+  <text x="24" y="102" class="line l2" fill="#8a8478">⏺ Analizando 34 archivos…</text>
+  <text x="24" y="128" class="line l3" fill="#8a8478">⏺ Ejecutando tests…</text>
+  <text x="24" y="160" class="line l4" fill="#e6a15c">✓ Auditoría completada — 3 hallazgos, 1 crítico</text>
+
+  <g class="bars">
+    <rect class="bar"    x="24" y="196" width="5" height="22" rx="2" fill="#d97757"/>
+    <rect class="bar b2" x="33" y="196" width="5" height="22" rx="2" fill="#d97757"/>
+    <rect class="bar b3" x="42" y="196" width="5" height="22" rx="2" fill="#d97757"/>
+    <rect class="bar b4" x="51" y="196" width="5" height="22" rx="2" fill="#d97757"/>
+  </g>
+  <text x="66" y="205" class="line l5" fill="#d97757" font-weight="bold">claude-voice · voz: Víctor</text>
+  <text x="24" y="240" class="line l6" fill="#f0eae0" font-style="italic">“Terminé la auditoría: tres hallazgos, uno crítico.</text>
+  <text x="36" y="262" class="line l6" fill="#f0eae0" font-style="italic">¿Quieres que corrija el crítico ahora?”</text>
+  <rect x="24" y="276" width="9" height="15" fill="#7cd992" class="cursor"/>
+</svg>

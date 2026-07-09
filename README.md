@@ -10,6 +10,8 @@ tokens, funciona offline**. *(English summary below.)*
 
 🌐 **Página del proyecto:** https://lowlufi.github.io/claude-voice/
 
+![Demostración: Claude Code termina una auditoría y claude-voice lee el resultado en voz alta](docs/demo.svg)
+
 ## ¿Para quién es?
 
 - Para quien lanza una auditoría o un cambio largo y se va a hacer otra cosa:
@@ -165,6 +167,12 @@ Silenciosas: no reproducen audio ni tocan tu configuración real.
 ```bash
 ./uninstall.sh
 ```
+
+## Contribuir
+
+Los PRs son bienvenidos — el port a Linux/Windows es lo más pedido. Lee las
+reglas en [CONTRIBUTING.md](CONTRIBUTING.md) y corre los tests antes de abrir
+el PR.
 
 ---
 
