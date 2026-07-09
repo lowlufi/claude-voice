@@ -72,7 +72,8 @@ voz callate            # cortar lo que esté diciendo ahora mismo
 voz off | on           # silenciar del todo / reactivar
 voz motor neural       # voz neural moderna (gratis, necesita internet)
 voz motor tradicional  # voz de macOS (offline)
-voz voces              # listar las voces neuronales en español
+voz idioma en          # ¡cualquier idioma!: frases habladas + voz + filtros (es, en, pt, fr, de, it, ja…)
+voz voces              # listar las voces neuronales de tu idioma (voz voces fr = otro idioma)
 voz demo               # escucharlas TODAS seguidas para comparar (voz demo es-CL filtra)
 voz favoritas karla dalia   # guardar favoritas; luego basta: voz usar karla
 voz modo brief         # full = todo | brief = lo esencial | summary = resumen Haiku | off
@@ -102,6 +103,7 @@ dejar de funcionar algún día — por eso el respaldo offline siempre queda act
 
 | Opción                | Valores                              | Qué hace                                                   |
 | --------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| `lang`                | `es`, `en`, `pt`, `fr`, `de`, `it`…  | Idioma de las frases habladas y de la voz automática       |
 | `mode`                | `full` / `brief` / `summary` / `off` | Todo, lo esencial (2 frases + preguntas), resumen, o nada  |
 | `engine`              | `say` / `edge`                       | Voz de macOS (offline) o neural de Microsoft (internet)    |
 | `voice`               | `auto` o nombre de voz               | Voz de `say`; `auto` elige una en español (ej. Paulina)    |

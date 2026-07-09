@@ -179,6 +179,26 @@ cv.CONFIG_PATH = badfav
 check("favoritas: tipo inválido -> lista vacía", cv.load_config()["favorites"] == [])
 cv.CONFIG_PATH = orig_cfg_path
 
+# --- multi-idioma ---
+en = cv.STRINGS["en"]
+r8 = cv.clean_text("Mira:\n```js\nlet x=1\n```\nlisto.", en)
+check("i18n: placeholder en inglés", "code block omitted" in r8 and "código" not in r8, r8)
+n_en = cv.translate_notification({"message": "Claude needs your permission to use Bash", "notification_type": "permission_prompt"}, en)
+check("i18n: permiso en inglés", n_en == "Claude needs your permission to use Bash", n_en)
+t_en = cv.truncate("Test sentence here. " * 100, 300, en)
+check("i18n: truncado en inglés", "rest of the message" in t_en, t_en)
+check("i18n: idioma raro cae a inglés", cv.strings({"lang": "sw"}) is cv.STRINGS["en"])
+check("i18n: default es", cv.strings({}) is cv.STRINGS["es"])
+badlang = os.path.join(_tmp, "lang.json")
+with open(badlang, "w") as f:
+    json.dump({"lang": "Español!"}, f)
+cv.CONFIG_PATH = badlang
+check("i18n: lang inválido -> es", cv.load_config()["lang"] == "es")
+cv.CONFIG_PATH = orig_cfg_path
+for code, table in cv.STRINGS.items():
+    missing = set(cv.STRINGS["es"]) - set(table)
+    check("i18n: '{}' completo".format(code), not missing, str(missing))
+
 # --- vigilante de foco ---
 check("foco: parsea LSDisplayName", cv.parse_lsappinfo_name('"LSDisplayName"="Antigravity IDE"') == "Antigravity IDE")
 check("foco: parsea name", cv.parse_lsappinfo_name('"name"="Terminal"') == "Terminal")

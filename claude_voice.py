@@ -11,8 +11,9 @@ Comandos manuales (o vía el wrapper `voz`):
   voz off | on              silenciar del todo / reactivar
   voz callate               cortar lo que esté diciendo ahora
   voz motor <say|edge>      say = voz de macOS (offline) | edge = neural (gratis, internet)
-  voz voces                 listar las voces neuronales en español
-  voz demo [filtro]         escuchar todas las voces seguidas (ej: voz demo es-CL)
+  voz idioma <código>       es, en, pt, fr, de, it, ja… (frases + voz + filtros)
+  voz voces [idioma]        listar las voces neuronales del idioma configurado
+  voz demo [filtro]         escuchar las voces seguidas (voz demo es-CL, voz demo en)
   voz favoritas [nombres]   guardar/ver tus voces favoritas (voz usar karla funciona)
   voz modo <full|brief|summary|off>
   voz velocidad <n>         palabras por minuto
@@ -38,6 +39,7 @@ MAX_LOG_BYTES = 262144
 MAX_RAW_CHARS = 20000  # tope de entrada antes de limpiar (evita regex lentos en mensajes enormes)
 
 DEFAULTS = {
+    "lang": "es",              # idioma de las frases habladas y de la voz automática
     "mode": "full",            # full = todo | brief = lo esencial | summary = resumen con Haiku (usa tokens) | off
     "engine": "say",           # say = voz de macOS (offline) | edge = neural Microsoft (gratis, internet)
     "voice": "auto",           # voz de `say`, o "auto" (elige una en español)
@@ -58,6 +60,117 @@ DEFAULTS = {
 MODES = ("full", "brief", "summary", "off")
 ENGINES = ("say", "edge")
 EDGE_MEDIA = os.path.expanduser("~/.claude/claude-voice-tts.mp3")
+
+# Frases habladas por idioma. Cualquier otro idioma cae a inglés,
+# pero la voz y el filtrado de voces funcionan para todos igual.
+STRINGS = {
+    "es": {
+        "code": " (bloque de código omitido) ",
+        "table": " (tabla omitida)\n",
+        "link": " enlace ",
+        "trunc": " El resto del mensaje está en la terminal.",
+        "permission": "Claude necesita tu permiso para usar {}",
+        "permission_generic": "Claude necesita tu permiso. {}",
+        "waiting": "Claude está esperando tu respuesta",
+        "question": "Claude te está haciendo una pregunta",
+        "agent": "Un agente de Claude necesita tu respuesta",
+        "project": "En {}: ",
+        "test": "Hola. Soy Claude, y a partir de ahora puedes escucharme.",
+        "demo": "Hola, soy {}. Así sueno yo.",
+        "demo_country": "Hola, soy {}, de {}. Así sueno yo.",
+    },
+    "en": {
+        "code": " (code block omitted) ",
+        "table": " (table omitted)\n",
+        "link": " link ",
+        "trunc": " The rest of the message is in the terminal.",
+        "permission": "Claude needs your permission to use {}",
+        "permission_generic": "Claude needs your permission. {}",
+        "waiting": "Claude is waiting for your input",
+        "question": "Claude is asking you a question",
+        "agent": "A Claude agent needs your input",
+        "project": "In {}: ",
+        "test": "Hi. I'm Claude, and from now on you can hear me.",
+        "demo": "Hi, I'm {}. This is how I sound.",
+        "demo_country": "Hi, I'm {}, from {}. This is how I sound.",
+    },
+    "pt": {
+        "code": " (bloco de código omitido) ",
+        "table": " (tabela omitida)\n",
+        "link": " link ",
+        "trunc": " O resto da mensagem está no terminal.",
+        "permission": "O Claude precisa da sua permissão para usar {}",
+        "permission_generic": "O Claude precisa da sua permissão. {}",
+        "waiting": "O Claude está esperando a sua resposta",
+        "question": "O Claude está fazendo uma pergunta",
+        "agent": "Um agente do Claude precisa da sua resposta",
+        "project": "Em {}: ",
+        "test": "Olá. Eu sou o Claude, e a partir de agora você pode me ouvir.",
+        "demo": "Olá, eu sou {}. É assim que eu soo.",
+        "demo_country": "Olá, eu sou {}, de {}. É assim que eu soo.",
+    },
+    "fr": {
+        "code": " (bloc de code omis) ",
+        "table": " (tableau omis)\n",
+        "link": " lien ",
+        "trunc": " Le reste du message est dans le terminal.",
+        "permission": "Claude a besoin de ta permission pour utiliser {}",
+        "permission_generic": "Claude a besoin de ta permission. {}",
+        "waiting": "Claude attend ta réponse",
+        "question": "Claude te pose une question",
+        "agent": "Un agent de Claude attend ta réponse",
+        "project": "Dans {} : ",
+        "test": "Bonjour. Je suis Claude, et à partir de maintenant tu peux m'entendre.",
+        "demo": "Bonjour, je suis {}. Voilà comment je sonne.",
+        "demo_country": "Bonjour, je suis {}, de {}. Voilà comment je sonne.",
+    },
+    "de": {
+        "code": " (Codeblock ausgelassen) ",
+        "table": " (Tabelle ausgelassen)\n",
+        "link": " Link ",
+        "trunc": " Der Rest der Nachricht steht im Terminal.",
+        "permission": "Claude braucht deine Erlaubnis für {}",
+        "permission_generic": "Claude braucht deine Erlaubnis. {}",
+        "waiting": "Claude wartet auf deine Antwort",
+        "question": "Claude stellt dir eine Frage",
+        "agent": "Ein Claude-Agent braucht deine Antwort",
+        "project": "In {}: ",
+        "test": "Hallo. Ich bin Claude, und ab jetzt kannst du mich hören.",
+        "demo": "Hallo, ich bin {}. So klinge ich.",
+        "demo_country": "Hallo, ich bin {}, aus {}. So klinge ich.",
+    },
+    "it": {
+        "code": " (blocco di codice omesso) ",
+        "table": " (tabella omessa)\n",
+        "link": " link ",
+        "trunc": " Il resto del messaggio è nel terminale.",
+        "permission": "Claude ha bisogno del tuo permesso per usare {}",
+        "permission_generic": "Claude ha bisogno del tuo permesso. {}",
+        "waiting": "Claude sta aspettando la tua risposta",
+        "question": "Claude ti sta facendo una domanda",
+        "agent": "Un agente di Claude ha bisogno della tua risposta",
+        "project": "In {}: ",
+        "test": "Ciao. Sono Claude, e da adesso puoi ascoltarmi.",
+        "demo": "Ciao, sono {}. Ecco come suono.",
+        "demo_country": "Ciao, sono {}, da {}. Ecco come suono.",
+    },
+}
+
+# Voz neural por defecto al cambiar de idioma (fallback: inglés)
+EDGE_DEFAULT_VOICE = {
+    "es": "es-MX-DaliaNeural", "en": "en-US-JennyNeural",
+    "pt": "pt-BR-FranciscaNeural", "fr": "fr-FR-DeniseNeural",
+    "de": "de-DE-KatjaNeural", "it": "it-IT-ElsaNeural",
+    "ja": "ja-JP-NanamiNeural", "zh": "zh-CN-XiaoxiaoNeural",
+    "ko": "ko-KR-SunHiNeural", "hi": "hi-IN-SwaraNeural",
+    "ar": "ar-SA-ZariyahNeural", "ru": "ru-RU-SvetlanaNeural",
+    "nl": "nl-NL-FennaNeural", "pl": "pl-PL-ZofiaNeural",
+    "tr": "tr-TR-EmelNeural", "ca": "ca-ES-JoanaNeural",
+}
+
+
+def strings(cfg):
+    return STRINGS.get(cfg.get("lang", "es"), STRINGS["en"])
 
 # Voces preferidas si voice == "auto" (en orden)
 PREFERRED_VOICES = ["Paulina", "Mónica", "Monica", "Angélica", "Juan", "Jorge", "Diego"]
@@ -101,6 +214,8 @@ def load_config():
         cfg["engine"] = DEFAULTS["engine"]
     favs = cfg.get("favorites")
     cfg["favorites"] = [f for f in favs if isinstance(f, str)] if isinstance(favs, list) else []
+    if not isinstance(cfg.get("lang"), str) or not re.match(r"^[a-z]{2,3}$", cfg.get("lang") or ""):
+        cfg["lang"] = DEFAULTS["lang"]
     for k in ("speak_notifications", "announce_project", "stop_on_focus"):
         cfg[k] = bool(cfg.get(k))
     apps = cfg.get("focus_apps")
@@ -138,29 +253,32 @@ def pick_voice(cfg):
         m = re.match(r"^(.+?)\s+([a-z]{2}[_-][A-Za-z0-9]{2,3})\s", line)
         if m:
             voices.append((m.group(1).strip(), m.group(2)))
-    spanish = [v for v in voices if v[1].startswith("es")]
-    for name in PREFERRED_VOICES:
-        for v, _loc in spanish:
-            if v == name:
+    lang = cfg.get("lang", "es")
+    matching = [v for v in voices if v[1].lower().startswith(lang)]
+    if lang == "es":
+        for name in PREFERRED_VOICES:
+            for v, _loc in matching:
+                if v == name:
+                    return v
+        for v, loc in matching:  # es_MX primero, luego cualquier español
+            if loc == "es_MX":
                 return v
-    for v, loc in spanish:  # es_MX primero, luego cualquier español
-        if loc == "es_MX":
-            return v
-    if spanish:
-        return spanish[0][0]
+    if matching:
+        return matching[0][0]
     return None  # voz por defecto del sistema
 
 
-def clean_text(text):
+def clean_text(text, s=None):
     """Convierte markdown a texto natural para escuchar."""
+    s = s or STRINGS["es"]
     # bloques de código
-    text = re.sub(r"```.*?```", " (bloque de código omitido) ", text, flags=re.S)
-    text = re.sub(r"```.*$", " (bloque de código omitido) ", text, flags=re.S)  # bloque sin cerrar
+    text = re.sub(r"```.*?```", s["code"], text, flags=re.S)
+    text = re.sub(r"```.*$", s["code"], text, flags=re.S)  # bloque sin cerrar
     # tablas
-    text = re.sub(r"(?m)(?:^[ \t]*\|.*\n?)+", " (tabla omitida)\n", text)
+    text = re.sub(r"(?m)(?:^[ \t]*\|.*\n?)+", s["table"], text)
     # enlaces [texto](url) -> texto, y URLs sueltas
     text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
-    text = re.sub(r"https?://\S+", " enlace ", text)
+    text = re.sub(r"https?://\S+", s["link"], text)
     # código inline `x` -> x
     text = re.sub(r"`([^`\n]*)`", r"\1", text)
     # encabezados, negritas, cursivas, reglas horizontales, viñetas
@@ -200,14 +318,15 @@ def briefen(text, max_sentences=6):
     return " ".join(picked[:max_sentences])
 
 
-def truncate(text, max_chars):
+def truncate(text, max_chars, s=None):
+    s = s or STRINGS["es"]
     if max_chars <= 0 or len(text) <= max_chars:
         return text
     cut = text[:max_chars]
     dot = cut.rfind(". ")
     if dot > max_chars // 2:
         cut = cut[: dot + 1]
-    return cut + " El resto del mensaje está en la terminal."
+    return cut + s["trunc"]
 
 
 def tracked_say_pid():
@@ -288,8 +407,8 @@ def edge_synthesize(text, cfg, out_path=EDGE_MEDIA):
     return None
 
 
-def list_edge_voices():
-    """Nombres de las voces neuronales en español, o [] si no hay conexión."""
+def list_edge_voices(prefix="es"):
+    """Nombres de las voces neuronales del idioma dado, o [] si no hay conexión."""
     if not edge_available():
         return []
     try:
@@ -297,7 +416,7 @@ def list_edge_voices():
             [sys.executable, "-m", "edge_tts", "--list-voices"],
             capture_output=True, text=True, timeout=30,
         )
-        return [l.split()[0] for l in r.stdout.splitlines() if l.startswith("es-")]
+        return [l.split()[0] for l in r.stdout.splitlines() if l.startswith(prefix + "-")]
     except (OSError, subprocess.SubprocessError):
         return []
 
@@ -486,7 +605,7 @@ def find_claude_cli():
     return None
 
 
-def summarize(text):
+def summarize(text, cfg=None):
     """Modo summary: resume con Haiku vía `claude -p`. ESTO SÍ USA TOKENS (pocos).
     Devuelve None si algo falla; el llamador cae a modo brief."""
     cli = find_claude_cli()
@@ -494,11 +613,12 @@ def summarize(text):
         return None
     env = dict(os.environ)
     env["CLAUDE_VOICE_INNER"] = "1"  # candado anti-recursión (ver main)
+    lang = (cfg or {}).get("lang", "es")
     prompt = (
         "Resume la siguiente respuesta de un asistente de programación en 2 o 3 "
-        "frases habladas, en español, pensadas para escucharse en voz alta. "
-        "Conserva siempre las preguntas al usuario y los pasos a seguir. "
-        "Responde SOLO con el resumen."
+        "frases habladas, pensadas para escucharse en voz alta, en el idioma "
+        "'{}'. Conserva siempre las preguntas al usuario y los pasos a seguir. "
+        "Responde SOLO con el resumen.".format(lang)
     )
     try:
         r = subprocess.run(
@@ -518,7 +638,7 @@ def project_prefix(data, cfg):
     if not cfg.get("announce_project"):
         return ""
     folder = os.path.basename((data.get("cwd") or "").rstrip("/"))
-    return "En {}: ".format(folder) if folder else ""
+    return strings(cfg)["project"].format(folder) if folder else ""
 
 
 def handle_stop(data, cfg):
@@ -531,31 +651,33 @@ def handle_stop(data, cfg):
     if not raw:
         return
     raw = raw[:MAX_RAW_CHARS]
+    s = strings(cfg)
     if mode == "summary":
-        s = summarize(raw)
-        text = clean_text(s) if s else briefen(clean_text(raw))
+        resumen = summarize(raw, cfg)
+        text = clean_text(resumen, s) if resumen else briefen(clean_text(raw, s))
     else:
-        text = clean_text(raw)
+        text = clean_text(raw, s)
         if mode == "brief":
             text = briefen(text)
-    text = truncate(text, cfg["max_chars"])
+    text = truncate(text, cfg["max_chars"], s)
     speak(text, cfg, when_busy="interrupt")
 
 
-def translate_notification(data):
+def translate_notification(data, s=None):
+    s = s or STRINGS["es"]
     msg = (data.get("message") or "").strip()
     ntype = data.get("notification_type") or ""
     m = re.match(r"Claude needs your permission to use (.+)", msg)
     if m:
-        return "Claude necesita tu permiso para usar {}".format(m.group(1))
+        return s["permission"].format(m.group(1))
     if ntype == "idle_prompt" or "waiting for your input" in msg:
-        return "Claude está esperando tu respuesta"
+        return s["waiting"]
     if ntype == "permission_prompt":
-        return "Claude necesita tu permiso. {}".format(msg)
+        return s["permission_generic"].format(msg)
     if ntype == "elicitation_dialog":
-        return "Claude te está haciendo una pregunta"
+        return s["question"]
     if ntype == "agent_needs_input":
-        return "Un agente de Claude necesita tu respuesta"
+        return s["agent"]
     return msg
 
 
@@ -565,7 +687,7 @@ def handle_notification(data, cfg):
     ntype = data.get("notification_type") or ""
     if ntype in SKIP_NOTIFICATION_TYPES:
         return
-    spoken = translate_notification(data)
+    spoken = translate_notification(data, strings(cfg))
     if not spoken:
         return
     # el aviso de inactividad no debe cortar una lectura en curso: si la voz
@@ -576,6 +698,7 @@ def handle_notification(data, cfg):
 
 
 def cmd_estado(cfg):
+    print("idioma:          {}".format(cfg["lang"]))
     print("modo:            {}".format(cfg["mode"]))
     print("motor:           {}".format("edge (neural, con respaldo say)" if cfg["engine"] == "edge" else "say (voz de macOS)"))
     if cfg["engine"] == "edge":
@@ -647,7 +770,7 @@ def main():
             time.sleep(0.4)
         return
     if cmd == "test":
-        speak("Hola. Soy Claude, y a partir de ahora puedes escucharme.", cfg)
+        speak(strings(cfg)["test"], cfg)
         return
     if cmd == "modo":
         val = sys.argv[2] if len(sys.argv) > 2 else ""
@@ -736,13 +859,16 @@ def main():
             print("Aún no tienes favoritas. Guárdalas así: voz favoritas karla dalia victor")
         return
     if cmd == "voces":
-        print("VOCES NEURONALES en español — actívalas con: voz usar <nombre>")
-        print("(escúchalas todas seguidas con: voz demo, o por país: voz demo es-CL)")
+        pref = (sys.argv[2] if len(sys.argv) > 2 else cfg["lang"]).lower()
+        print("VOCES NEURONALES ({}) — actívalas con: voz usar <nombre>".format(pref))
+        print("(escúchalas seguidas: voz demo | otro idioma: voz voces en, voz voces fr…)")
         listed = False
-        for v in list_edge_voices():
+        for v in list_edge_voices(pref):
             print("  " + v)
             listed = True
-        if not listed:
+        if not listed and pref != "es":
+            print("  (sin conexión, sin edge-tts, o idioma sin voces: prueba voz voces es)")
+        elif not listed:
             print("  (sin conexión o sin edge-tts; las más usadas:)")
             for v in ("es-MX-DaliaNeural", "es-MX-JorgeNeural", "es-CL-CatalinaNeural",
                       "es-CL-LorenzoNeural", "es-ES-ElviraNeural", "es-ES-AlvaroNeural",
@@ -753,13 +879,15 @@ def main():
         return
     if cmd == "demo":
         filtro = (sys.argv[2] if len(sys.argv) > 2 else "").lower()
-        voices = list_edge_voices()
+        # un código de idioma (en, fr, pt…) lista ese idioma completo
+        pref = filtro if re.match(r"^[a-z]{2,3}$", filtro) else cfg["lang"]
+        voices = list_edge_voices(pref)
         if not voices:
             print("La demo necesita internet y el paquete edge-tts (actívalo con: voz motor neural).")
             sys.exit(1)
         if filtro in ("favoritas", "fav") and cfg.get("favorites"):
             voices = [v for v in cfg["favorites"] if v in voices] or list(cfg["favorites"])
-        elif filtro:
+        elif filtro and not re.match(r"^[a-z]{2,3}$", filtro):
             voices = [v for v in voices if filtro in v.lower()]
         if not voices:
             print("Ninguna voz coincide con '{}'. Lista completa: voz voces".format(filtro))
@@ -767,13 +895,13 @@ def main():
         demo_media = os.path.expanduser("~/.claude/claude-voice-demo.mp3")
         print("Reproduciendo {} voces — Ctrl+C para detener.".format(len(voices)))
         try:
+            s = strings(cfg)
             for v in voices:
-                m = re.match(r"es-([A-Z]{2})-(\w+?)Neural$", v)
+                m = re.match(r"[a-z]{2,3}-([A-Z][A-Za-z]{1,3})-(\w+?)Neural$", v)
                 nombre = m.group(2) if m else v
-                pais = EDGE_COUNTRIES.get(m.group(1), "") if m else ""
+                pais = EDGE_COUNTRIES.get(m.group(1), "") if (m and v.startswith("es-")) else ""
                 print("  ▶ {}".format(v))
-                frase = "Hola, soy {}{}. Así sueno yo.".format(
-                    nombre, ", de " + pais if pais else "")
+                frase = s["demo_country"].format(nombre, pais) if pais else s["demo"].format(nombre)
                 cfg_v = dict(cfg)
                 cfg_v["edge_voice"] = v
                 media = edge_synthesize(frase, cfg_v, out_path=demo_media)
@@ -784,6 +912,19 @@ def main():
         except KeyboardInterrupt:
             print("\nDemo detenida.")
         print("¿Ya tienes favorita? Actívala con: voz usar <nombre>")
+        return
+    if cmd == "idioma":
+        val = (sys.argv[2] if len(sys.argv) > 2 else "").lower()
+        if not re.match(r"^[a-z]{2,3}$", val):
+            print("Uso: voz idioma <código>   (es, en, pt, fr, de, it, ja, zh…)")
+            print("Cambia las frases habladas, la voz automática y el filtro de voz voces/demo.")
+            sys.exit(1)
+        save_config("lang", val)
+        if cfg["engine"] == "edge" and val in EDGE_DEFAULT_VOICE:
+            save_config("edge_voice", EDGE_DEFAULT_VOICE[val])
+        frases = "sí" if val in STRINGS else "no (usará inglés)"
+        print("Idioma: {} — frases traducidas: {}".format(val, frases))
+        print("Elige voz con: voz voces {}  y  voz usar <nombre>".format(val))
         return
     if cmd == "estado":
         cmd_estado(cfg)
