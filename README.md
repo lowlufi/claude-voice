@@ -101,6 +101,32 @@ Las voces "Enhanced"/"Premium" suenan mucho más naturales. Descárgalas en:
 **Ajustes del Sistema → Accesibilidad → Contenido hablado → Voz del sistema →
 Gestionar voces…** → baja *Paulina (México) Enhanced* y luego `voz usar Paulina`.
 
+## Limitaciones conocidas
+
+- **Solo macOS**: depende del sintetizador `say`. Un port a Linux (espeak) o
+  Windows sería bienvenido — [abre un issue](https://github.com/lowlufi/claude-voice/issues).
+- **Solo sesiones locales de Claude Code**: no habla por claude.ai web, la app
+  móvil ni sesiones en la nube (los hooks corren en tu máquina).
+- **Habla al final, no narra el proceso**: lee la respuesta terminada y los
+  avisos de permisos/preguntas; no va contando cada paso intermedio.
+- **No dicta código ni tablas**: los omite a propósito ("bloque de código
+  omitido") — para el código está la terminal.
+- **Tope de lectura**: `max_chars` (2500 por defecto); si la respuesta es más
+  larga, avisa que el resto está en la terminal.
+- **Una voz a la vez**: con varias sesiones simultáneas, la respuesta más
+  reciente calla a la anterior.
+- **Calidad de voz**: limitada a las voces del sistema (`say`); las voces de
+  Siri no están disponibles. Las "Enhanced" mejoran mucho (ver abajo).
+- **Es de ida**: te habla, pero no le dictas (para eso está el modo de voz
+  propio de Claude Code).
+- **Modo `summary`**: es el único que necesita el CLI `claude` y consume
+  algunos tokens (Haiku); apagado por defecto.
+
+Sobre los hooks: se disparan **sin límite de veces y sin costo** (son comandos
+locales), pero los eventos disponibles son una lista fija de Claude Code y cada
+ejecución tiene timeout — por eso el script lanza la voz en segundo plano y
+sale al instante.
+
 ## Pruebas
 
 ```bash

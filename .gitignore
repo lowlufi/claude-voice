@@ -1,6 +1,9 @@
 # configuración personal del usuario (se crea desde config.example.json)
 config.json
 
+# instrucciones locales de Claude Code (no se publican)
+CLAUDE.md
+
 __pycache__/
 *.pyc
 .DS_Store
