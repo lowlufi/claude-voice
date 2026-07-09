@@ -60,21 +60,43 @@ Tres [hooks de Claude Code](https://code.claude.com/docs/en/hooks) en
 ## El comando `voz`
 
 ```bash
-voz test          # prueba de voz
-voz callate       # cortar lo que esté diciendo ahora mismo
-voz off | on      # silenciar del todo / reactivar
-voz modo brief    # full = todo | brief = lo esencial | summary = resumen Haiku | off
-voz velocidad 200 # palabras por minuto
-voz usar Mónica   # cambiar de voz (lista: say -v '?')  |  voz usar auto
-voz estado        # ver configuración actual
+voz test               # prueba de voz
+voz callate            # cortar lo que esté diciendo ahora mismo
+voz off | on           # silenciar del todo / reactivar
+voz motor neural       # voz neural moderna (gratis, necesita internet)
+voz motor tradicional  # voz de macOS (offline)
+voz voces              # listar las voces neuronales en español
+voz modo brief         # full = todo | brief = lo esencial | summary = resumen Haiku | off
+voz velocidad 200      # palabras por minuto
+voz usar Mónica        # voz de macOS (lista: say -v '?')  |  voz usar auto
+voz usar es-CL-CatalinaNeural   # voz neural (lista: voz voces)
+voz estado             # ver configuración actual
 ```
+
+## Voz neural (opcional)
+
+Además de las voces de macOS, claude-voice puede hablar con las **voces
+neuronales de Microsoft Edge** (calidad casi humana, gratis e ilimitado):
+
+```bash
+voz motor neural       # instala edge-tts automáticamente la primera vez
+voz voces              # elige entre ~40 voces en español (México, Chile, España…)
+voz usar es-MX-JorgeNeural
+```
+
+Requiere internet; si no hay conexión, **cae automáticamente a la voz de
+macOS** sin que tengas que hacer nada. Para volver: `voz motor tradicional`.
+Nota: usa una API no oficial de Microsoft (el paquete `edge-tts`), que podría
+dejar de funcionar algún día — por eso el respaldo offline siempre queda activo.
 
 ## Configuración (`config.json`)
 
 | Opción                | Valores                              | Qué hace                                                   |
 | --------------------- | ------------------------------------ | ---------------------------------------------------------- |
 | `mode`                | `full` / `brief` / `summary` / `off` | Todo, lo esencial (2 frases + preguntas), resumen, o nada  |
-| `voice`               | `auto` o nombre de voz               | `auto` elige una en español (ej. Paulina)                  |
+| `engine`              | `say` / `edge`                       | Voz de macOS (offline) o neural de Microsoft (internet)    |
+| `voice`               | `auto` o nombre de voz               | Voz de `say`; `auto` elige una en español (ej. Paulina)    |
+| `edge_voice`          | ej. `es-MX-DaliaNeural`              | Voz neural cuando `engine` es `edge` (lista: `voz voces`)  |
 | `rate`                | número                               | Velocidad en palabras por minuto (185 por defecto)         |
 | `max_chars`           | número                               | Tope de caracteres por respuesta (avisa si truncó)         |
 | `speak_notifications` | `true` / `false`                     | Leer también los avisos de permisos/espera                 |
@@ -115,8 +137,9 @@ Gestionar voces…** → baja *Paulina (México) Enhanced* y luego `voz usar Pau
   larga, avisa que el resto está en la terminal.
 - **Una voz a la vez**: con varias sesiones simultáneas, la respuesta más
   reciente calla a la anterior.
-- **Calidad de voz**: limitada a las voces del sistema (`say`); las voces de
-  Siri no están disponibles. Las "Enhanced" mejoran mucho (ver abajo).
+- **Calidad de voz**: el motor tradicional usa las voces del sistema (`say`);
+  las de Siri no están disponibles. Para calidad neural moderna está
+  `voz motor neural` (gratis, requiere internet y una API no oficial).
 - **Es de ida**: te habla, pero no le dictas (para eso está el modo de voz
   propio de Claude Code).
 - **Modo `summary`**: es el único que necesita el CLI `claude` y consume

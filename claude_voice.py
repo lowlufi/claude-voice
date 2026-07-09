@@ -10,9 +10,10 @@ Comandos manuales (o vía el wrapper `voz`):
   voz test                  prueba de voz
   voz off | on              silenciar del todo / reactivar
   voz callate               cortar lo que esté diciendo ahora
+  voz motor <say|edge>      say = voz de macOS (offline) | edge = neural (gratis, internet)
   voz modo <full|brief|summary|off>
   voz velocidad <n>         palabras por minuto
-  voz usar <NombreDeVoz>    voz de `say` (ver: say -v '?')
+  voz usar <NombreDeVoz>    voz de `say`, o neural (ej. es-MX-DaliaNeural)
   voz estado                mostrar configuración actual
 """
 
@@ -35,7 +36,9 @@ MAX_RAW_CHARS = 20000  # tope de entrada antes de limpiar (evita regex lentos en
 
 DEFAULTS = {
     "mode": "full",            # full = todo | brief = lo esencial | summary = resumen con Haiku (usa tokens) | off
-    "voice": "auto",           # nombre de voz de `say`, o "auto" (elige una en español)
+    "engine": "say",           # say = voz de macOS (offline) | edge = neural Microsoft (gratis, internet)
+    "voice": "auto",           # voz de `say`, o "auto" (elige una en español)
+    "edge_voice": "es-MX-DaliaNeural",  # voz neural si engine == "edge"
     "rate": 185,               # velocidad en palabras por minuto
     "max_chars": 2500,         # tope de caracteres a leer por respuesta
     "speak_notifications": True,
@@ -43,6 +46,8 @@ DEFAULTS = {
 }
 
 MODES = ("full", "brief", "summary", "off")
+ENGINES = ("say", "edge")
+EDGE_MEDIA = os.path.expanduser("~/.claude/claude-voice-tts.mp3")
 
 # Voces preferidas si voice == "auto" (en orden)
 PREFERRED_VOICES = ["Paulina", "Mónica", "Monica", "Angélica", "Juan", "Jorge", "Diego"]
@@ -56,7 +61,7 @@ def log(msg):
         if os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > MAX_LOG_BYTES:
             open(LOG_FILE, "w").close()
         with open(LOG_FILE, "a") as f:
-            f.write(msg.rstrip() + "\n")
+            f.write(time.strftime("[%Y-%m-%d %H:%M:%S] ") + msg.rstrip() + "\n")
     except OSError:
         pass
 
@@ -78,8 +83,12 @@ def load_config():
             cfg[k] = DEFAULTS[k]
     if not isinstance(cfg.get("voice"), str) or not cfg["voice"]:
         cfg["voice"] = "auto"
+    if not isinstance(cfg.get("edge_voice"), str) or not cfg["edge_voice"]:
+        cfg["edge_voice"] = DEFAULTS["edge_voice"]
     if cfg.get("mode") not in MODES:
         cfg["mode"] = DEFAULTS["mode"]
+    if cfg.get("engine") not in ENGINES:
+        cfg["engine"] = DEFAULTS["engine"]
     for k in ("speak_notifications", "announce_project"):
         cfg[k] = bool(cfg.get(k))
     return cfg
@@ -188,14 +197,14 @@ def truncate(text, max_chars):
 
 
 def tracked_say_pid():
-    """PID del `say` que lanzamos, o None si ya no está hablando."""
+    """PID del reproductor que lanzamos (say o afplay), o None si ya calló."""
     try:
         with open(PID_FILE) as f:
             pid = int(f.read().strip())
         comm = subprocess.run(
             ["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True
         ).stdout.strip()
-        if os.path.basename(comm) == "say":
+        if os.path.basename(comm) in ("say", "afplay"):
             return pid
     except (OSError, ValueError, subprocess.SubprocessError):
         pass
@@ -212,16 +221,57 @@ def stop_current_speech():
 
 
 def silence_all():
-    """Corta el say rastreado y cualquier otro que haya quedado suelto."""
+    """Corta el reproductor rastreado y cualquier otro que haya quedado suelto."""
     stop_current_speech()
+    for proc in ("say", "afplay"):
+        try:
+            subprocess.run(
+                ["/usr/bin/pkill", "-x", proc],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            pass
+
+
+def edge_available():
     try:
-        subprocess.run(
-            ["/usr/bin/pkill", "-x", "say"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        r = subprocess.run(
+            [sys.executable, "-c", "import edge_tts"], capture_output=True, timeout=15
         )
-    except OSError:
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def edge_rate_pct(rate):
+    """Convierte palabras-por-minuto de `say` al porcentaje relativo de edge-tts
+    (175 ppm ~ velocidad normal)."""
+    try:
+        pct = int(round((float(rate) / 175.0 - 1) * 100))
+    except (TypeError, ValueError):
+        pct = 0
+    return max(-40, min(60, pct))
+
+
+def edge_synthesize(text, cfg):
+    """Genera el audio neural con edge-tts. Devuelve la ruta del mp3 o None si
+    falla (sin internet, no instalado, etc.) para que el llamador caiga a `say`."""
+    pct = edge_rate_pct(cfg.get("rate", 185))
+    args = [
+        sys.executable, "-m", "edge_tts",
+        "--text", text,
+        "--voice", cfg.get("edge_voice") or DEFAULTS["edge_voice"],
+        "--rate", "{:+d}%".format(pct),
+        "--write-media", EDGE_MEDIA,
+    ]
+    try:
+        r = subprocess.run(args, capture_output=True, timeout=25)
+        if r.returncode == 0 and os.path.exists(EDGE_MEDIA) and os.path.getsize(EDGE_MEDIA) > 0:
+            return EDGE_MEDIA
+    except (OSError, subprocess.SubprocessError):
         pass
+    return None
 
 
 def speak(text, cfg, when_busy="interrupt"):
@@ -236,35 +286,55 @@ def speak(text, cfg, when_busy="interrupt"):
             if not tracked_say_pid():
                 break
             time.sleep(0.5)
-    args = ["say"]
-    voice = pick_voice(cfg)
-    if voice:
-        args += ["-v", voice]
-    if cfg.get("rate"):
-        args += ["-r", str(cfg["rate"])]
+
+    # motor edge: sintetiza primero; si falla, cae a `say` sin hacer ruido
+    player_args = None
+    if cfg.get("engine") == "edge":
+        media = edge_synthesize(text, cfg)
+        if media:
+            player_args = ["/usr/bin/afplay", media]
+        else:
+            log("edge-tts no disponible; usando say como respaldo")
+    if player_args is None:
+        say_args = ["say"]
+        voice = pick_voice(cfg)
+        if voice:
+            say_args += ["-v", voice]
+        if cfg.get("rate"):
+            say_args += ["-r", str(cfg["rate"])]
+
     # flock serializa matar-lanzar-anotar entre sesiones concurrentes:
     # nunca quedan dos voces hablando a la vez
     with open(LOCK_FILE, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         stop_current_speech()
-        # el texto va por stdin: evita límites de argumentos y problemas de escape
-        p = subprocess.Popen(
-            args,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,  # sigue hablando aunque este script termine
-        )
+        if player_args:
+            p = subprocess.Popen(
+                player_args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,  # sigue sonando aunque este script termine
+            )
+        else:
+            # el texto va por stdin: evita límites de argumentos y problemas de escape
+            p = subprocess.Popen(
+                say_args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
         try:
             with open(PID_FILE, "w") as f:
                 f.write(str(p.pid))
         except OSError:
             pass
-        try:
-            p.stdin.write(text.encode("utf-8"))
-            p.stdin.close()
-        except (BrokenPipeError, OSError):
-            pass
+        if not player_args:
+            try:
+                p.stdin.write(text.encode("utf-8"))
+                p.stdin.close()
+            except (BrokenPipeError, OSError):
+                pass
 
 
 def last_assistant_text_from_transcript(path):
@@ -421,7 +491,10 @@ def handle_notification(data, cfg):
 
 def cmd_estado(cfg):
     print("modo:            {}".format(cfg["mode"]))
-    print("voz:             {}{}".format(cfg["voice"], " (usa: {})".format(pick_voice(cfg)) if cfg["voice"] == "auto" else ""))
+    print("motor:           {}".format("edge (neural, con respaldo say)" if cfg["engine"] == "edge" else "say (voz de macOS)"))
+    if cfg["engine"] == "edge":
+        print("voz neural:      {}".format(cfg["edge_voice"]))
+    print("voz say:         {}{}".format(cfg["voice"], " (usa: {})".format(pick_voice(cfg)) if cfg["voice"] == "auto" else ""))
     print("velocidad:       {} ppm".format(cfg["rate"]))
     print("tope de lectura: {} caracteres".format(cfg["max_chars"]))
     print("notificaciones:  {}".format("sí" if cfg["speak_notifications"] else "no"))
@@ -473,13 +546,68 @@ def main():
         save_config("rate", n)
         print("Velocidad: {} ppm".format(n))
         return
+    if cmd == "motor":
+        val = (sys.argv[2] if len(sys.argv) > 2 else "").lower()
+        alias = {"tradicional": "say", "clasica": "say", "clásica": "say", "macos": "say",
+                 "neural": "edge", "mejor": "edge", "moderna": "edge"}
+        val = alias.get(val, val)
+        if val not in ENGINES:
+            print("Uso: voz motor <say|edge>   (también: tradicional | neural)")
+            print("  say  / tradicional = voz de macOS: offline, sin instalar nada")
+            print("  edge / neural      = voz neural de Microsoft: gratis, más real, necesita internet")
+            sys.exit(1)
+        if val == "edge" and not edge_available():
+            print("Instalando edge-tts (voces neuronales, gratis)...")
+            r = subprocess.run([sys.executable, "-m", "pip", "install", "--user", "--quiet", "edge-tts"])
+            if r.returncode != 0 or not edge_available():
+                print("No pude instalarlo. Hazlo manualmente y reintenta:")
+                print("  /usr/bin/python3 -m pip install --user edge-tts")
+                sys.exit(1)
+        save_config("engine", val)
+        if val == "edge":
+            print("Motor: edge — voz neural {} (si no hay internet, cae a say solo)".format(cfg.get("edge_voice") or DEFAULTS["edge_voice"]))
+            print("Pruébala con: voz test   |   otras voces: voz usar es-MX-JorgeNeural")
+        else:
+            print("Motor: say — voz de macOS, 100% offline")
+        return
     if cmd == "usar":
         name = " ".join(sys.argv[2:]).strip()
         if not name:
-            print("Uso: voz usar <NombreDeVoz|auto>   (lista: say -v '?')")
+            print("Uso: voz usar <NombreDeVoz|auto>")
+            print("  voces de macOS:  say -v '?'          (ej. voz usar Mónica)")
+            print("  voces neuronales: es-MX-DaliaNeural, es-MX-JorgeNeural, es-ES-ElviraNeural...")
             sys.exit(1)
-        save_config("voice", name)
-        print("Voz: {}".format(name))
+        if re.match(r"^[a-z]{2,3}-[A-Z][A-Za-z]{1,3}-\w+Neural$", name):
+            save_config("edge_voice", name)
+            extra = "" if cfg["engine"] == "edge" else "  (actívala con: voz motor edge)"
+            print("Voz neural: {}{}".format(name, extra))
+        else:
+            save_config("voice", name)
+            print("Voz de macOS: {}".format(name))
+        return
+    if cmd == "voces":
+        print("VOCES NEURONALES en español — actívalas con: voz usar <nombre>")
+        listed = False
+        if edge_available():
+            try:
+                r = subprocess.run(
+                    [sys.executable, "-m", "edge_tts", "--list-voices"],
+                    capture_output=True, text=True, timeout=30,
+                )
+                for line in r.stdout.splitlines():
+                    if line.startswith("es-"):
+                        print("  " + line.split()[0])
+                        listed = True
+            except (OSError, subprocess.SubprocessError):
+                pass
+        if not listed:
+            print("  (sin conexión o sin edge-tts; las más usadas:)")
+            for v in ("es-MX-DaliaNeural", "es-MX-JorgeNeural", "es-CL-CatalinaNeural",
+                      "es-CL-LorenzoNeural", "es-ES-ElviraNeural", "es-ES-AlvaroNeural",
+                      "es-AR-ElenaNeural", "es-CO-SalomeNeural", "es-US-PalomaNeural"):
+                print("  " + v)
+        print()
+        print("VOCES DE macOS (motor tradicional) — lista completa: say -v '?'")
         return
     if cmd == "estado":
         cmd_estado(cfg)
@@ -489,6 +617,8 @@ def main():
     try:
         data = json.load(sys.stdin)
     except ValueError:
+        return
+    if not isinstance(data, dict):
         return
     try:
         if cmd == "stop":

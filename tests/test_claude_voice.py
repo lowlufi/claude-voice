@@ -157,6 +157,59 @@ check("voz: respeta selección manual", cv.pick_voice({"voice": "Jorge"}) == "Jo
 auto = cv.pick_voice({"voice": "auto"})
 check("voz: auto devuelve None o nombre", auto is None or (isinstance(auto, str) and auto), repr(auto))
 
+# --- motor edge: config, velocidad y fallback a say ---
+badcfg2 = os.path.join(_tmp, "engine.json")
+with open(badcfg2, "w") as f:
+    json.dump({"engine": "turbina", "edge_voice": 42}, f)
+cv.CONFIG_PATH = badcfg2
+c3 = cv.load_config()
+check("engine: inválido -> say", c3["engine"] == "say", str(c3))
+check("engine: edge_voice inválida -> default", c3["edge_voice"] == "es-MX-DaliaNeural", str(c3))
+cv.CONFIG_PATH = orig_cfg_path
+
+check("edge: 175 ppm -> +0%", cv.edge_rate_pct(175) == 0)
+check("edge: 185 ppm -> +6%", cv.edge_rate_pct(185) == 6, str(cv.edge_rate_pct(185)))
+check("edge: valores absurdos acotados", cv.edge_rate_pct(9999) == 60 and cv.edge_rate_pct(0) == -40)
+check("edge: rate corrupto -> 0", cv.edge_rate_pct("rápido") == 0)
+
+captured = {}
+
+
+class _FakeProc:
+    pid = 4242
+    class _Stdin:
+        def write(self, b): pass
+        def close(self): pass
+    stdin = _Stdin()
+
+
+def _fake_popen(args, **kw):
+    captured["args"] = args
+    return _FakeProc()
+
+
+orig_popen2 = cv.subprocess.Popen
+orig_synth = cv.edge_synthesize
+orig_pick = cv.pick_voice
+orig_stop = cv.stop_current_speech
+cv.subprocess.Popen = _fake_popen
+cv.pick_voice = lambda cfg: "Paulina"        # evita subprocess.run dentro del speak simulado
+cv.stop_current_speech = lambda: None        # ídem
+cv.edge_synthesize = lambda text, cfg: None  # simula: sin internet / sin edge-tts
+cfg_edge = dict(cv.DEFAULTS)
+cfg_edge["engine"] = "edge"
+try:
+    cv.speak("hola", cfg_edge)
+    check("edge: sin edge-tts cae a say", captured.get("args", [""])[0] == "say", str(captured))
+    cv.edge_synthesize = lambda text, cfg: "/tmp/fake.mp3"
+    cv.speak("hola", cfg_edge)
+    check("edge: con audio usa afplay", captured.get("args", [""])[0] == "/usr/bin/afplay", str(captured))
+finally:
+    cv.subprocess.Popen = orig_popen2
+    cv.edge_synthesize = orig_synth
+    cv.pick_voice = orig_pick
+    cv.stop_current_speech = orig_stop
+
 # --- flag off no truena ni suena ---
 open(cv.OFF_FLAG, "w").close()
 try:
