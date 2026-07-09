@@ -8,6 +8,8 @@ baja visión.
 Usa la voz del sistema de macOS (`say`): **sin dependencias, sin APIs, sin
 tokens, funciona offline**. *(English summary below.)*
 
+🌐 **Página del proyecto:** https://lowlufi.github.io/claude-voice/
+
 ## ¿Para quién es?
 
 - Para quien lanza una auditoría o un cambio largo y se va a hacer otra cosa:
@@ -31,6 +33,17 @@ voz test
 
 Ejecutar `install.sh` de nuevo es seguro: no duplica nada y conserva el resto
 de tu `~/.claude/settings.json`.
+
+## Tutorial: activar y desactivar
+
+| Quiero…                            | Comando          | Qué pasa                                                        |
+| ---------------------------------- | ---------------- | --------------------------------------------------------------- |
+| **Activarla** (primera vez)        | `./install.sh`   | Registra los hooks; toda sesión nueva de Claude Code te hablará |
+| **Que se calle ahora mismo**       | `voz callate`    | Corta la lectura en curso (también se calla al enviar un prompt) |
+| **Apagar la voz** (sin desinstalar)| `voz off`        | Silencio total; los hooks quedan instalados pero mudos          |
+| **Volver a encenderla**            | `voz on`         | La voz vuelve en la siguiente respuesta                         |
+| **Ver si está activa**             | `voz estado`     | Muestra modo, voz, velocidad y si está silenciada               |
+| **Desinstalarla por completo**     | `./uninstall.sh` | Quita hooks, comando `voz` y archivos de estado                 |
 
 ## Cómo funciona
 

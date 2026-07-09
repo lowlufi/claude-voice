@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>claude-voice — Claude Code, ahora te habla</title>
+<meta name="description" content="Haz que Claude Code lea sus respuestas en voz alta en macOS. Cero dependencias, cero tokens, offline. Instalación en 30 segundos.">
+<meta property="og:title" content="claude-voice 🔊 — Claude Code, ahora te habla">
+<meta property="og:description" content="Escucha los resultados, preguntas y pasos a seguir de Claude Code mientras haces otras cosas. Open source, MIT.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔊</text></svg>">
+<style>
+  :root {
+    --bg: #0a0c12;
+    --bg-soft: #10131c;
+    --card: #141826;
+    --border: #232a3d;
+    --text: #e8ebf4;
+    --muted: #8b93a7;
+    --accent: #7c6cff;
+    --accent-2: #4fd6c2;
+    --glow: rgba(124, 108, 255, .35);
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- hero ---------- */
+  header {
+    position: relative;
+    padding: 96px 0 72px;
+    text-align: center;
+    background:
+      radial-gradient(600px 340px at 50% -60px, var(--glow), transparent 70%),
+      radial-gradient(500px 300px at 85% 10%, rgba(79, 214, 194, .12), transparent 70%);
+  }
+  .eq {
+    display: inline-flex; gap: 5px; align-items: flex-end; height: 40px; margin-bottom: 22px;
+  }
+  .eq span {
+    width: 7px; border-radius: 4px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    animation: eq 1.1s ease-in-out infinite;
+  }
+  .eq span:nth-child(1){ height: 40%; animation-delay: 0s }
+  .eq span:nth-child(2){ height: 90%; animation-delay: .15s }
+  .eq span:nth-child(3){ height: 60%; animation-delay: .3s }
+  .eq span:nth-child(4){ height: 100%; animation-delay: .45s }
+  .eq span:nth-child(5){ height: 50%; animation-delay: .6s }
+  @keyframes eq { 0%,100% { transform: scaleY(.5) } 50% { transform: scaleY(1) } }
+  @media (prefers-reduced-motion: reduce) { .eq span, .cursor { animation: none } }
+
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+  }
+  h1 .grad {
+    background: linear-gradient(92deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tagline { margin: 18px auto 0; max-width: 620px; color: var(--muted); font-size: 1.15rem; }
+  .cta { margin-top: 36px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 13px 26px; border-radius: 12px;
+    font-weight: 600; text-decoration: none; font-size: 1rem;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    background: linear-gradient(92deg, var(--accent), #5e8bff);
+    color: #fff; box-shadow: 0 8px 28px var(--glow);
+  }
+  .btn-ghost { border: 1px solid var(--border); color: var(--text); background: var(--bg-soft); }
+  .pills { margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .pill {
+    font-size: .82rem; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 14px; background: rgba(20, 24, 38, .6);
+  }
+
+  /* ---------- terminal ---------- */
+  .terminal {
+    margin: 56px auto 0; max-width: 640px; text-align: left;
+    background: #0d1017; border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    overflow-x: auto;
+  }
+  .t-bar { display: flex; gap: 7px; padding: 13px 16px; border-bottom: 1px solid var(--border); }
+  .t-bar i { width: 12px; height: 12px; border-radius: 50%; }
+  .t-bar i:nth-child(1){ background:#ff5f57 } .t-bar i:nth-child(2){ background:#febc2e } .t-bar i:nth-child(3){ background:#28c840 }
+  .t-body { padding: 20px 22px; font-family: var(--mono); font-size: .92rem; line-height: 1.9; white-space: pre; }
+  .p { color: var(--accent-2); }
+  .c { color: var(--text); }
+  .o { color: var(--muted); }
+  .cursor { display: inline-block; width: 9px; height: 1.1em; vertical-align: text-bottom;
+    background: var(--accent-2); animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0 } }
+
+  /* ---------- sections ---------- */
+  section { padding: 76px 0; }
+  section.alt { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); letter-spacing: -.02em; text-align: center; }
+  .sub { text-align: center; color: var(--muted); max-width: 560px; margin: 12px auto 48px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .step {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px;
+  }
+  .step .n {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    font-weight: 700; color: #fff; margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+  .step h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .step p { color: var(--muted); font-size: .95rem; }
+  .step code, .onoff code, li code {
+    font-family: var(--mono); font-size: .86em; color: var(--accent-2);
+    background: rgba(79, 214, 194, .08); border: 1px solid rgba(79, 214, 194, .18);
+    padding: 2px 7px; border-radius: 6px; white-space: nowrap;
+  }
+
+  /* ---------- on / off ---------- */
+  .onoff { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .switch-card {
+    border-radius: 16px; padding: 30px; border: 1px solid var(--border); background: var(--card);
+    position: relative; overflow: hidden;
+  }
+  .switch-card.on { border-color: rgba(79, 214, 194, .4); }
+  .switch-card.on::before, .switch-card.off::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+  }
+  .switch-card.on::before { background: radial-gradient(320px 160px at 20% 0%, rgba(79,214,194,.12), transparent 70%); }
+  .switch-card.off::before { background: radial-gradient(320px 160px at 20% 0%, rgba(255,95,87,.08), transparent 70%); }
+  .switch-card .state { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .switch-card.on .state { color: var(--accent-2); }
+  .switch-card.off .state { color: #ff8a84; }
+  .switch-card h3 { font-size: 1.5rem; margin: 8px 0 10px; font-family: var(--mono); }
+  .switch-card p { color: var(--muted); font-size: .95rem; }
+  .mini { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .mini .step h3 { font-family: var(--mono); font-weight: 600; }
+
+  /* ---------- features ---------- */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .feat { display: flex; gap: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .feat .ico { font-size: 1.6rem; line-height: 1.2; }
+  .feat h3 { font-size: 1.02rem; margin-bottom: 6px; }
+  .feat p { color: var(--muted); font-size: .93rem; }
+
+  /* ---------- a11y ---------- */
+  .a11y {
+    border: 1px solid rgba(124, 108, 255, .35); background:
+      radial-gradient(500px 240px at 15% 0%, rgba(124,108,255,.14), transparent 70%), var(--card);
+    border-radius: 20px; padding: 40px; text-align: center;
+  }
+  .a11y h2 { margin-bottom: 12px; }
+  .a11y p { color: var(--muted); max-width: 640px; margin: 0 auto; }
+
+  footer { padding: 48px 0 64px; text-align: center; color: var(--muted); font-size: .9rem; }
+  footer a { color: var(--accent-2); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 760px) {
+    .steps, .onoff, .grid, .mini { grid-template-columns: 1fr; }
+    header { padding: 72px 0 56px; }
+    .t-body { font-size: .8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <h1>Claude Code,<br><span class="grad">ahora te habla.</span></h1>
+    <p class="tagline">claude-voice lee en voz alta las respuestas, preguntas y pasos a seguir de Claude Code — para que sigas con lo tuyo mientras él trabaja.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#instalar">Instalar en 30 segundos</a>
+      <a class="btn btn-ghost" href="https://github.com/lowlufi/claude-voice">Ver en GitHub ↗</a>
+    </div>
+    <div class="pills">
+      <span class="pill">Cero dependencias</span>
+      <span class="pill">Cero tokens</span>
+      <span class="pill">Funciona offline</span>
+      <span class="pill">macOS</span>
+      <span class="pill">MIT</span>
+    </div>
+
+    <div class="terminal" role="img" aria-label="Terminal mostrando la instalación de claude-voice">
+      <div class="t-bar"><i></i><i></i><i></i></div>
+      <div class="t-body"><span class="p">~ $</span> <span class="c">git clone https://github.com/lowlufi/claude-voice.git</span>
+<span class="p">~ $</span> <span class="c">cd claude-voice && ./install.sh</span>
+<span class="o">Hooks registrados en ~/.claude/settings.json</span>
+<span class="o">Comando instalado: /opt/homebrew/bin/voz</span>
+<span class="p">~ $</span> <span class="c">voz test</span>
+<span class="o">🔊 “Hola. Soy Claude, y a partir de ahora puedes escucharme.”</span>
+<span class="p">~ $</span> <span class="cursor"></span></div>
+    </div>
+  </div>
+</header>
+
+<section id="instalar">
+  <div class="wrap">
+    <h2>Instalación en 3 pasos</h2>
+    <p class="sub">Solo necesitas macOS y Claude Code. Sin APIs, sin claves, sin nada que pagar.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h3>Clona el repositorio</h3>
+        <p><code>git clone https://github.com/lowlufi/claude-voice.git</code></p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h3>Ejecuta el instalador</h3>
+        <p><code>./install.sh</code> registra los hooks y crea el comando <code>voz</code>. Correrlo dos veces no rompe nada.</p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h3>Escúchalo</h3>
+        <p><code>voz test</code> — y listo: cada nueva sesión de Claude Code te hablará sola.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="onoff">
+  <div class="wrap">
+    <h2>Encender y apagar es un comando</h2>
+    <p class="sub">La voz nunca estorba: se calla sola cuando escribes un prompt, y tú tienes el control total.</p>
+    <div class="onoff">
+      <div class="switch-card on">
+        <div class="state">● Activada</div>
+        <h3>voz on</h3>
+        <p>Reactiva la lectura en voz alta. Es el estado por defecto después de instalar — no tienes que hacer nada.</p>
+      </div>
+      <div class="switch-card off">
+        <div class="state">● Silenciada</div>
+        <h3>voz off</h3>
+        <p>Apaga la voz por completo sin desinstalar nada. Los hooks siguen ahí, calladitos, hasta que digas <code>voz on</code>.</p>
+      </div>
+    </div>
+    <div class="mini">
+      <div class="step">
+        <h3>voz callate</h3>
+        <p>Corta lo que esté diciendo <em>ahora mismo</em>. También se calla automáticamente cuando envías un nuevo prompt.</p>
+      </div>
+      <div class="step">
+        <h3>./uninstall.sh</h3>
+        <p>¿Ya no la quieres? Un comando la quita entera: hooks, comando <code>voz</code> y archivos de estado.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Hecha con cariño para escucharse bien</h2>
+    <p class="sub">No es un lector de pantalla a lo bruto: entiende lo que Claude escribe.</p>
+    <div class="grid">
+      <div class="feat"><div class="ico">🧹</div><div>
+        <h3>Limpia el markdown</h3>
+        <p>Omite bloques de código y tablas, acorta rutas de archivos y lee las listas con pausas naturales.</p>
+      </div></div>
+      <div class="feat"><div class="ico">🔔</div><div>
+        <h3>Te avisa cuando te necesita</h3>
+        <p>“En mi-proyecto: Claude necesita tu permiso para usar Bash.” Nunca más quedarte esperando sin saberlo.</p>
+      </div></div>
+      <div class="feat"><div class="ico">🎚️</div><div>
+        <h3>A tu medida</h3>
+        <p><code>voz modo brief</code> para lo esencial, <code>voz velocidad 200</code>, <code>voz usar Mónica</code>… todo configurable.</p>
+      </div></div>
+      <div class="feat"><div class="ico">🔒</div><div>
+        <h3>Local y gratis, de verdad</h3>
+        <p>Usa el sintetizador <code>say</code> de macOS: sin APIs, sin tokens, sin internet. Tu código no sale de tu Mac.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="a11y">
+      <h2>♿ Accesibilidad primero</h2>
+      <p>claude-voice nació para no tener que mirar la terminal — y eso la convierte en una aliada para desarrolladores ciegos o con baja visión: las respuestas de Claude Code llegan en audio de forma automática, complementando a VoiceOver. Si trabajas en accesibilidad y tienes ideas, <a href="https://github.com/lowlufi/claude-voice/issues" style="color:var(--accent-2)">nos encantaría leerte</a>.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>🔊 <strong>claude-voice</strong> — código abierto bajo licencia <a href="https://github.com/lowlufi/claude-voice/blob/main/LICENSE">MIT</a></p>
+    <p style="margin-top:6px"><a href="https://github.com/lowlufi/claude-voice">github.com/lowlufi/claude-voice</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
