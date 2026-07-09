@@ -13,6 +13,7 @@ Comandos manuales (o vía el wrapper `voz`):
   voz motor <say|edge>      say = voz de macOS (offline) | edge = neural (gratis, internet)
   voz voces                 listar las voces neuronales en español
   voz demo [filtro]         escuchar todas las voces seguidas (ej: voz demo es-CL)
+  voz favoritas [nombres]   guardar/ver tus voces favoritas (voz usar karla funciona)
   voz modo <full|brief|summary|off>
   voz velocidad <n>         palabras por minuto
   voz usar <NombreDeVoz>    voz de `say`, o neural (ej. es-MX-DaliaNeural)
@@ -41,6 +42,7 @@ DEFAULTS = {
     "engine": "say",           # say = voz de macOS (offline) | edge = neural Microsoft (gratis, internet)
     "voice": "auto",           # voz de `say`, o "auto" (elige una en español)
     "edge_voice": "es-MX-DaliaNeural",  # voz neural si engine == "edge"
+    "favorites": [],           # voces favoritas; permiten `voz usar <nombre corto>`
     "rate": 185,               # velocidad en palabras por minuto
     "max_chars": 2500,         # tope de caracteres a leer por respuesta
     "speak_notifications": True,
@@ -91,6 +93,8 @@ def load_config():
         cfg["mode"] = DEFAULTS["mode"]
     if cfg.get("engine") not in ENGINES:
         cfg["engine"] = DEFAULTS["engine"]
+    favs = cfg.get("favorites")
+    cfg["favorites"] = [f for f in favs if isinstance(f, str)] if isinstance(favs, list) else []
     for k in ("speak_notifications", "announce_project"):
         cfg[k] = bool(cfg.get(k))
     return cfg
@@ -288,6 +292,21 @@ def list_edge_voices():
         return [l.split()[0] for l in r.stdout.splitlines() if l.startswith("es-")]
     except (OSError, subprocess.SubprocessError):
         return []
+
+
+NEURAL_RE = r"^[a-z]{2,3}-[A-Z][A-Za-z]{1,3}-\w+Neural$"
+
+
+def resolve_voice_name(name, cfg):
+    """Decide si `name` es una voz neural (completa o el nombre corto de una
+    favorita) o una voz de macOS. Devuelve ("edge"|"say", nombre_completo)."""
+    if re.match(NEURAL_RE, name):
+        return "edge", name
+    low = name.lower()
+    for v in cfg.get("favorites") or []:
+        if low in v.lower():
+            return "edge", v
+    return "say", name
 
 
 EDGE_COUNTRIES = {
@@ -603,13 +622,41 @@ def main():
             print("  voces de macOS:  say -v '?'          (ej. voz usar Mónica)")
             print("  voces neuronales: es-MX-DaliaNeural, es-MX-JorgeNeural, es-ES-ElviraNeural...")
             sys.exit(1)
-        if re.match(r"^[a-z]{2,3}-[A-Z][A-Za-z]{1,3}-\w+Neural$", name):
-            save_config("edge_voice", name)
+        kind, full = resolve_voice_name(name, cfg)
+        if kind == "edge":
+            save_config("edge_voice", full)
             extra = "" if cfg["engine"] == "edge" else "  (actívala con: voz motor edge)"
-            print("Voz neural: {}{}".format(name, extra))
+            print("Voz neural: {}{}".format(full, extra))
         else:
-            save_config("voice", name)
-            print("Voz de macOS: {}".format(name))
+            save_config("voice", full)
+            print("Voz de macOS: {}".format(full))
+        return
+    if cmd == "favoritas":
+        names = sys.argv[2:]
+        if names:
+            pool = list_edge_voices()
+            resolved, bad = [], []
+            for n in names:
+                if re.match(NEURAL_RE, n):
+                    resolved.append(n)
+                    continue
+                m = [v for v in pool if n.lower() in v.lower()]
+                if m:
+                    resolved.append(m[0])
+                else:
+                    bad.append(n)
+            if bad:
+                print("No encontré: {}  (lista completa: voz voces)".format(", ".join(bad)))
+            if resolved:
+                save_config("favorites", resolved)
+        favs = load_config().get("favorites") or []
+        if favs:
+            print("Voces favoritas — cambia con el nombre corto: voz usar karla")
+            for v in favs:
+                print("  ★ " + v)
+            print("Escúchalas seguidas: voz demo favoritas")
+        else:
+            print("Aún no tienes favoritas. Guárdalas así: voz favoritas karla dalia victor")
         return
     if cmd == "voces":
         print("VOCES NEURONALES en español — actívalas con: voz usar <nombre>")
@@ -633,7 +680,9 @@ def main():
         if not voices:
             print("La demo necesita internet y el paquete edge-tts (actívalo con: voz motor neural).")
             sys.exit(1)
-        if filtro:
+        if filtro in ("favoritas", "fav") and cfg.get("favorites"):
+            voices = [v for v in cfg["favorites"] if v in voices] or list(cfg["favorites"])
+        elif filtro:
             voices = [v for v in voices if filtro in v.lower()]
         if not voices:
             print("Ninguna voz coincide con '{}'. Lista completa: voz voces".format(filtro))

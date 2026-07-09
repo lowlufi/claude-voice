@@ -67,6 +67,7 @@ voz motor neural       # voz neural moderna (gratis, necesita internet)
 voz motor tradicional  # voz de macOS (offline)
 voz voces              # listar las voces neuronales en español
 voz demo               # escucharlas TODAS seguidas para comparar (voz demo es-CL filtra)
+voz favoritas karla dalia   # guardar favoritas; luego basta: voz usar karla
 voz modo brief         # full = todo | brief = lo esencial | summary = resumen Haiku | off
 voz velocidad 200      # palabras por minuto
 voz usar Mónica        # voz de macOS (lista: say -v '?')  |  voz usar auto

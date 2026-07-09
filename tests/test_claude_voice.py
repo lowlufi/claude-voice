@@ -167,6 +167,18 @@ check("engine: inválido -> say", c3["engine"] == "say", str(c3))
 check("engine: edge_voice inválida -> default", c3["edge_voice"] == "es-MX-DaliaNeural", str(c3))
 cv.CONFIG_PATH = orig_cfg_path
 
+cfg_fav = dict(cv.DEFAULTS)
+cfg_fav["favorites"] = ["es-HN-KarlaNeural", "es-MX-DaliaNeural"]
+check("usar: nombre neural completo", cv.resolve_voice_name("es-PY-MarioNeural", cfg_fav) == ("edge", "es-PY-MarioNeural"))
+check("usar: favorita por nombre corto", cv.resolve_voice_name("karla", cfg_fav) == ("edge", "es-HN-KarlaNeural"))
+check("usar: no favorita -> voz de macOS", cv.resolve_voice_name("Mónica", cfg_fav) == ("say", "Mónica"))
+badfav = os.path.join(_tmp, "fav.json")
+with open(badfav, "w") as f:
+    json.dump({"favorites": "karla"}, f)
+cv.CONFIG_PATH = badfav
+check("favoritas: tipo inválido -> lista vacía", cv.load_config()["favorites"] == [])
+cv.CONFIG_PATH = orig_cfg_path
+
 check("edge: 175 ppm -> +0%", cv.edge_rate_pct(175) == 0)
 check("edge: 185 ppm -> +6%", cv.edge_rate_pct(185) == 6, str(cv.edge_rate_pct(185)))
 check("edge: valores absurdos acotados", cv.edge_rate_pct(9999) == 60 and cv.edge_rate_pct(0) == -40)
