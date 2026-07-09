@@ -199,4 +199,4 @@ languages. Uninstall with `./uninstall.sh`.
 
 ## Licencia
 
-[MIT](LICENSE)
+[MIT](LICENSE) — creado por [@daanieleduardo](https://instagram.com/daanieleduardo) 🇨🇱
