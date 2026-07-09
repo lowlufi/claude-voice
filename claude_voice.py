@@ -43,7 +43,7 @@ DEFAULTS = {
     "mode": "full",            # full = todo | brief = lo esencial | summary = resumen con Haiku (usa tokens) | off
     "engine": "say",           # say = voz de macOS (offline) | edge = neural Microsoft (gratis, internet)
     "voice": "auto",           # voz de `say`, o "auto" (elige una en español)
-    "edge_voice": "es-MX-DaliaNeural",  # voz neural si engine == "edge"
+    "edge_voice": "es-PR-VictorNeural",  # voz neural si engine == "edge"
     "favorites": [],           # voces favoritas; permiten `voz usar <nombre corto>`
     "rate": 185,               # velocidad en palabras por minuto
     "max_chars": 2500,         # tope de caracteres a leer por respuesta
@@ -158,7 +158,7 @@ STRINGS = {
 
 # Voz neural por defecto al cambiar de idioma (fallback: inglés)
 EDGE_DEFAULT_VOICE = {
-    "es": "es-MX-DaliaNeural", "en": "en-US-JennyNeural",
+    "es": "es-PR-VictorNeural", "en": "en-US-JennyNeural",
     "pt": "pt-BR-FranciscaNeural", "fr": "fr-FR-DeniseNeural",
     "de": "de-DE-KatjaNeural", "it": "it-IT-ElsaNeural",
     "ja": "ja-JP-NanamiNeural", "zh": "zh-CN-XiaoxiaoNeural",

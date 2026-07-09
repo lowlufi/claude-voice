@@ -107,7 +107,7 @@ dejar de funcionar algún día — por eso el respaldo offline siempre queda act
 | `mode`                | `full` / `brief` / `summary` / `off` | Todo, lo esencial (2 frases + preguntas), resumen, o nada  |
 | `engine`              | `say` / `edge`                       | Voz de macOS (offline) o neural de Microsoft (internet)    |
 | `voice`               | `auto` o nombre de voz               | Voz de `say`; `auto` elige una en español (ej. Paulina)    |
-| `edge_voice`          | ej. `es-MX-DaliaNeural`              | Voz neural cuando `engine` es `edge` (lista: `voz voces`)  |
+| `edge_voice`          | ej. `es-PR-VictorNeural`             | Voz neural cuando `engine` es `edge` (lista: `voz voces`)  |
 | `rate`                | número                               | Velocidad en palabras por minuto (185 por defecto)         |
 | `max_chars`           | número                               | Tope de caracteres por respuesta (avisa si truncó)         |
 | `speak_notifications` | `true` / `false`                     | Leer también los avisos de permisos/espera                 |

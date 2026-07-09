@@ -164,7 +164,7 @@ with open(badcfg2, "w") as f:
 cv.CONFIG_PATH = badcfg2
 c3 = cv.load_config()
 check("engine: inválido -> say", c3["engine"] == "say", str(c3))
-check("engine: edge_voice inválida -> default", c3["edge_voice"] == "es-MX-DaliaNeural", str(c3))
+check("engine: edge_voice inválida -> default", c3["edge_voice"] == "es-PR-VictorNeural", str(c3))
 cv.CONFIG_PATH = orig_cfg_path
 
 cfg_fav = dict(cv.DEFAULTS)
