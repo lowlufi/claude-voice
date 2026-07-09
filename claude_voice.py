@@ -651,7 +651,9 @@ def main():
                 save_config("favorites", resolved)
         favs = load_config().get("favorites") or []
         if favs:
-            print("Voces favoritas — cambia con el nombre corto: voz usar karla")
+            corto = re.search(r"-(\w+?)Neural$", favs[0])
+            print("Voces favoritas — cambia con el nombre corto: voz usar {}".format(
+                corto.group(1).lower() if corto else favs[0]))
             for v in favs:
                 print("  ★ " + v)
             print("Escúchalas seguidas: voz demo favoritas")
