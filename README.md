@@ -59,6 +59,11 @@ Tres [hooks de Claude Code](https://code.claude.com/docs/en/hooks) en
   interrumpe una lectura en curso.
 - **UserPromptSubmit** → en cuanto envías un prompt, la voz se calla sola.
 
+Además, mientras habla, un vigilante ligero observa qué app está en primer
+plano (`lsappinfo`, sin permisos especiales): si **sales y vuelves** a la
+terminal o al IDE, la voz entiende que ya estás de regreso y se calla sola.
+Si nunca te fuiste, no interrumpe nada. Se desactiva con `stop_on_focus: false`.
+
 ## El comando `voz`
 
 ```bash
@@ -105,6 +110,8 @@ dejar de funcionar algún día — por eso el respaldo offline siempre queda act
 | `max_chars`           | número                               | Tope de caracteres por respuesta (avisa si truncó)         |
 | `speak_notifications` | `true` / `false`                     | Leer también los avisos de permisos/espera                 |
 | `announce_project`    | `true` / `false`                     | Anteponer el nombre de la carpeta en los avisos            |
+| `stop_on_focus`       | `true` / `false`                     | Callarse cuando **vuelves** a la terminal/IDE              |
+| `focus_apps`          | lista de apps                        | Qué apps cuentan como "volviste" (Terminal, iTerm, VS Code…) |
 
 Los cambios aplican de inmediato. Valores mal escritos no rompen nada: se
 ignoran y se usa el default. El único modo que consume tokens es `summary`

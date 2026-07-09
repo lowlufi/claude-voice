@@ -179,6 +179,27 @@ cv.CONFIG_PATH = badfav
 check("favoritas: tipo inválido -> lista vacía", cv.load_config()["favorites"] == [])
 cv.CONFIG_PATH = orig_cfg_path
 
+# --- vigilante de foco ---
+check("foco: parsea LSDisplayName", cv.parse_lsappinfo_name('"LSDisplayName"="Antigravity IDE"') == "Antigravity IDE")
+check("foco: parsea name", cv.parse_lsappinfo_name('"name"="Terminal"') == "Terminal")
+check("foco: salida rara -> None", cv.parse_lsappinfo_name("basura sin comillas") is None)
+badfoc = os.path.join(_tmp, "foc.json")
+with open(badfoc, "w") as f:
+    json.dump({"focus_apps": "Terminal", "stop_on_focus": 1}, f)
+cv.CONFIG_PATH = badfoc
+cfoc = cv.load_config()
+check("foco: focus_apps inválido -> defaults", "Terminal" in cfoc["focus_apps"] and len(cfoc["focus_apps"]) > 3, str(cfoc["focus_apps"]))
+check("foco: stop_on_focus coercionado a bool", cfoc["stop_on_focus"] is True)
+cv.CONFIG_PATH = orig_cfg_path
+
+import subprocess as _sp
+import time as _time
+_target = _sp.Popen(["sleep", "1.2"])
+_t0 = _time.time()
+_w = _sp.run([os.sys.executable, SCRIPT, "vigilar", str(_target.pid)], timeout=30)
+check("vigilar: termina al morir la voz", _w.returncode == 0 and _time.time() - _t0 < 15, str(_time.time() - _t0))
+_target.wait()
+
 check("edge: 175 ppm -> +0%", cv.edge_rate_pct(175) == 0)
 check("edge: 185 ppm -> +6%", cv.edge_rate_pct(185) == 6, str(cv.edge_rate_pct(185)))
 check("edge: valores absurdos acotados", cv.edge_rate_pct(9999) == 60 and cv.edge_rate_pct(0) == -40)
@@ -210,6 +231,7 @@ cv.stop_current_speech = lambda: None        # ídem
 cv.edge_synthesize = lambda text, cfg: None  # simula: sin internet / sin edge-tts
 cfg_edge = dict(cv.DEFAULTS)
 cfg_edge["engine"] = "edge"
+cfg_edge["stop_on_focus"] = False  # sin vigilante: capturamos solo al reproductor
 try:
     cv.speak("hola", cfg_edge)
     check("edge: sin edge-tts cae a say", captured.get("args", [""])[0] == "say", str(captured))

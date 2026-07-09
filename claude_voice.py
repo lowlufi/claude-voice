@@ -47,6 +47,12 @@ DEFAULTS = {
     "max_chars": 2500,         # tope de caracteres a leer por respuesta
     "speak_notifications": True,
     "announce_project": True,  # antepone el nombre de la carpeta en los avisos
+    "stop_on_focus": True,     # callarse cuando VUELVES a la terminal/IDE
+    "focus_apps": [            # apps que cuentan como "volviste a trabajar"
+        "Terminal", "iTerm2", "iTerm", "WezTerm", "kitty", "Alacritty",
+        "Ghostty", "Warp", "Visual Studio Code", "Cursor", "Windsurf",
+        "Antigravity IDE", "Zed",
+    ],
 }
 
 MODES = ("full", "brief", "summary", "off")
@@ -95,8 +101,10 @@ def load_config():
         cfg["engine"] = DEFAULTS["engine"]
     favs = cfg.get("favorites")
     cfg["favorites"] = [f for f in favs if isinstance(f, str)] if isinstance(favs, list) else []
-    for k in ("speak_notifications", "announce_project"):
+    for k in ("speak_notifications", "announce_project", "stop_on_focus"):
         cfg[k] = bool(cfg.get(k))
+    apps = cfg.get("focus_apps")
+    cfg["focus_apps"] = [a for a in apps if isinstance(a, str)] if isinstance(apps, list) else list(DEFAULTS["focus_apps"])
     return cfg
 
 
@@ -297,6 +305,28 @@ def list_edge_voices():
 NEURAL_RE = r"^[a-z]{2,3}-[A-Z][A-Za-z]{1,3}-\w+Neural$"
 
 
+def parse_lsappinfo_name(out):
+    m = re.search(r'"(?:LSDisplayName|name)"\s*=\s*"([^"]+)"', out or "")
+    return m.group(1) if m else None
+
+
+def frontmost_app():
+    """Nombre de la app en primer plano (lsappinfo: sin permisos especiales)."""
+    try:
+        asn = subprocess.run(
+            ["lsappinfo", "front"], capture_output=True, text=True, timeout=5
+        ).stdout.strip()
+        if not asn:
+            return None
+        out = subprocess.run(
+            ["lsappinfo", "info", "-only", "name", asn],
+            capture_output=True, text=True, timeout=5,
+        ).stdout
+        return parse_lsappinfo_name(out)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
 def resolve_voice_name(name, cfg):
     """Decide si `name` es una voz neural (completa o el nombre corto de una
     favorita) o una voz de macOS. Devuelve ("edge"|"say", nombre_completo)."""
@@ -379,6 +409,17 @@ def speak(text, cfg, when_busy="interrupt"):
                 p.stdin.write(text.encode("utf-8"))
                 p.stdin.close()
             except (BrokenPipeError, OSError):
+                pass
+        # vigilante de foco: si el usuario vuelve a la terminal/IDE, la voz se calla
+        if cfg.get("stop_on_focus"):
+            try:
+                subprocess.Popen(
+                    [sys.executable, os.path.abspath(__file__), "vigilar", str(p.pid)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+            except OSError:
                 pass
 
 
@@ -543,6 +584,7 @@ def cmd_estado(cfg):
     print("velocidad:       {} ppm".format(cfg["rate"]))
     print("tope de lectura: {} caracteres".format(cfg["max_chars"]))
     print("notificaciones:  {}".format("sí" if cfg["speak_notifications"] else "no"))
+    print("calla al volver: {}".format("sí (a la terminal/IDE)" if cfg["stop_on_focus"] else "no"))
     print("silenciada:      {}".format("SÍ (voz on para reactivar)" if os.path.exists(OFF_FLAG) else "no"))
     print("hablando ahora:  {}".format("sí" if tracked_say_pid() else "no"))
 
@@ -570,6 +612,39 @@ def main():
         return
     if cmd in ("callate", "silencio", "shh"):
         silence_all()
+        return
+    if cmd == "vigilar":
+        # proceso interno lanzado por speak(): vigila el foco mientras suena la voz.
+        # Se "arma" cuando el usuario está en OTRA app; al volver a la terminal/IDE
+        # mata al reproductor. Si la voz nace con la terminal al frente, no corta
+        # nada hasta que el usuario se vaya y regrese (transición real).
+        try:
+            target = int(sys.argv[2])
+        except (IndexError, ValueError):
+            return
+        apps = set(cfg.get("focus_apps") or [])
+        armed = False
+        for _ in range(900):  # tope ~6 minutos
+            try:
+                st = subprocess.run(
+                    ["ps", "-p", str(target), "-o", "state="],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+            except (OSError, subprocess.SubprocessError):
+                return
+            if not st or st.startswith("Z"):  # murió (o quedó zombi): nada que vigilar
+                return
+            app = frontmost_app()
+            if app:
+                if app not in apps:
+                    armed = True
+                elif armed:
+                    try:
+                        os.kill(target, 15)
+                    except OSError:
+                        pass
+                    return
+            time.sleep(0.4)
         return
     if cmd == "test":
         speak("Hola. Soy Claude, y a partir de ahora puedes escucharme.", cfg)
