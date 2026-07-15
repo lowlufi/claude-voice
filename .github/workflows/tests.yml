@@ -1,0 +1,15 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    # macOS: el proyecto usa say/afplay/lsappinfo (los tests no reproducen audio)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Correr la suite de tests
+        run: python3 tests/test_claude_voice.py

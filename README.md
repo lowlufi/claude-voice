@@ -1,16 +1,27 @@
-# claude-voice 🔊
+<div align="center">
 
-**Haz que Claude Code te hable.** Lee en voz alta sus respuestas finales y te
-avisa cuando necesita un permiso o está esperando tu respuesta — para que puedas
-hacer otras cosas mientras Claude trabaja, o para usar Claude Code si tienes
-baja visión.
+# 🔊 claude-voice
 
-Usa la voz del sistema de macOS (`say`): **sin dependencias, sin APIs, sin
-tokens, funciona offline**. *(English summary below.)*
+### Claude Code te habla en voz alta — en cualquier idioma
 
-🌐 **Página del proyecto:** https://lowlufi.github.io/claude-voice/
+Resultados, preguntas y pasos a seguir **en audio** mientras haces otra cosa.<br>
+Voces neuronales casi humanas, gratis y open source. *(English summary below.)*
+
+[![Tests](https://github.com/lowlufi/claude-voice/actions/workflows/tests.yml/badge.svg)](https://github.com/lowlufi/claude-voice/actions/workflows/tests.yml)
+[![Licencia MIT](https://img.shields.io/github/license/lowlufi/claude-voice?color=c2551a&label=licencia)](LICENSE)
+![macOS](https://img.shields.io/badge/macOS-12%2B-000000?logo=apple&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)
+![Idiomas](https://img.shields.io/badge/voz-es·en·pt·fr·de·it·%2B-c2551a)
+[![Estrellas](https://img.shields.io/github/stars/lowlufi/claude-voice?style=flat&color=c2551a&label=%E2%AD%90)](https://github.com/lowlufi/claude-voice/stargazers)
+
+**[🌐 Página del proyecto](https://lowlufi.github.io/claude-voice/)** ·
+[Instalación](#instalación) ·
+[Tutorial](#tutorial-activar-y-desactivar) ·
+[Contribuir](CONTRIBUTING.md)
 
 ![Demostración: Claude Code termina una auditoría y claude-voice lee el resultado en voz alta](docs/demo.svg)
+
+</div>
 
 ## ¿Para quién es?
 
